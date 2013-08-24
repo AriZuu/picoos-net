@@ -38,8 +38,8 @@
  * \author  Julien Abeille <jabeille@cisco.com> (IPv6 related code)
  */
 
-#include <picoos.h>
-#include <picoos-net.h>
+#include "net/uip.h"
+#include "net/uipopt.h"
 
 #if UIP_CONF_IPV6
 #include "net/uip-nd6.h"
