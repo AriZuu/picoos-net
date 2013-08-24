@@ -70,7 +70,7 @@ void tcpip_input()
 }
 
 #if UIP_CONF_IPV6
-
+#if 0
 void
 tcpip_ipv6_output(void)
 {
@@ -208,7 +208,7 @@ tcpip_ipv6_output(void)
   uip_len = 0;
   uip_ext_len = 0;
 }
-
+#endif
 uint8_t
 tcpip_output(uip_lladdr_t *a)
 {

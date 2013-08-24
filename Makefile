@@ -53,6 +53,7 @@ SRC_TXT =	sock.c \
 		net/uip-split.c \
 		net/uip_arp.c \
 		net/uip-debug.c \
+		net/tcpip.c \
 		net/uip6.c \
 		net/uip-icmp6.c \
 		net/uip-ds6.c \
