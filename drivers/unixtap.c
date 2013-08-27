@@ -89,7 +89,9 @@ void tapInit()
 {
   struct sigaction sig;
   int flags;
+#if !UIP_CONF_IPV6
   uip_ipaddr_t ip;
+#endif
   char ifconfig[80];
 
   tap = open("/dev/tap0", O_RDWR);
