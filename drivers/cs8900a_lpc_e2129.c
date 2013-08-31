@@ -259,17 +259,9 @@ void cs8900aSend(void)
   IOCLR = 0xf << 4;                                // Put address on bus
   IOSET = TX_FRAME_PORT << 4;
 
-  // Send 40+14=54 bytes of header
-  for (u = 0; u < 54; u += 2)
-    cs8900aWriteTxBuf(uip_buf + u);
-
-  if (uip_len <= 54)
-    return;
-
-  // Send remainder of packet, the application data
-  uip_len -= 54;
+  // Send packet.
   for (u = 0; u < uip_len; u += 2)
-    cs8900aWriteTxBuf(((uint8_t*)uip_appdata) + u);
+    cs8900aWriteTxBuf(uip_buf + u);
 }
 
 static void cs8900aSkipFrame(void)
