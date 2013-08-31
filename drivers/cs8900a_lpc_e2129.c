@@ -46,7 +46,11 @@ static TInitSeq InitSeq[] =
     { PP_IA + 4, UIP_ETHADDR4 + (UIP_ETHADDR5 << 8)},
 #endif
     { PP_LineCTL, SERIAL_RX_ON | SERIAL_TX_ON },           // configure the Physical Interface
-    { PP_RxCTL, RX_OK_ACCEPT | RX_IA_ACCEPT | RX_BROADCAST_ACCEPT }
+    { PP_LAF + 0, 0xffff },
+    { PP_LAF + 2, 0xffff },
+    { PP_LAF + 4, 0xffff },
+    { PP_LAF + 6, 0xffff },
+    { PP_RxCTL, RX_OK_ACCEPT | RX_IA_ACCEPT | RX_BROADCAST_ACCEPT | RX_MULTCAST_ACCEPT }
 };
 
 /*
