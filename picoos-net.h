@@ -29,6 +29,12 @@
  */
 
 #include <stdint.h>
+
+#ifdef __cplusplus
+extern "C"
+{
+#endif /* __cplusplus */
+
 #include <net/uip.h>
 #include <net/uip_arp.h>
 
@@ -111,3 +117,7 @@ void telnetFlush(NetTelnet* conn);
 int telnetReadLine(NetTelnet* conn, char* data, int max, int timeout);
 
 #endif
+
+#ifdef __cplusplus
+} // extern "C"
+#endif /* __cplusplus */
