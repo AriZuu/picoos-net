@@ -85,3 +85,7 @@ dist:
 
 changelog:
 	git log --date=short --format="%ad %ae %s" --date-order --follow .
+
+dox: doxygen.cfg
+	mkdir -p doc
+	doxygen doxygen.cfg

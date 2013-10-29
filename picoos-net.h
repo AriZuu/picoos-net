@@ -28,6 +28,37 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+/**
+ * @file    picoos-net.h
+ * @brief   Include file of pico]OS network library.
+ * @author  Ari Suutari
+ */
+
+/**
+ * @mainpage picoos-net - network libarary for pico]OS
+ * <b> Table Of Contents </b>
+ * - @ref api
+ * - @ref config
+ * @section overview Overview
+ * This library contains miscellaneous routines built on pico]OS pico & nano layers.
+ *
+ * @subsection features Features
+ * <b>Microsecond delay:</b>
+ *
+ * Implementation of microsecond delay using a spin-loop. Depending on CPU it uses either 
+ * simple delay loop or hardware timer.
+ *
+ * <b>FAT filesystem:</b>
+ *
+ * Implementation of FAT filesystem from <a href="http://elm-chan.org/fsw/ff/00index_e.html">elm-chan.</a>
+ * Currently only readonly mode is used and application must provide
+ * functions like disk_initialize, disk_read and disk_status that handle
+ * access to real hardware (like SD-card for example).
+ */
+
+/** @defgroup api   Network API */
+/** @defgroup config   Configuration */
+
 #include <stdint.h>
 
 #ifdef __cplusplus
@@ -37,6 +68,11 @@ extern "C"
 
 #include <net/uip.h>
 #include <net/uip_arp.h>
+
+/**
+ * @ingroup api
+ * @{
+ */
 
 /*
  * Packet flow
@@ -117,6 +153,8 @@ void telnetFlush(NetTelnet* conn);
 int telnetReadLine(NetTelnet* conn, char* data, int max, int timeout);
 
 #endif
+
+/** @} */
 
 #ifdef __cplusplus
 } // extern "C"
