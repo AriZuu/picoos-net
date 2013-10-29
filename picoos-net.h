@@ -37,8 +37,10 @@
 /**
  * @mainpage picoos-net - network libarary for pico]OS
  * <b> Table Of Contents </b>
- * - @ref api
- * - @ref config
+ * - @ref driver-api
+ * - @ref socket-api
+ * - @ref net-config
+ * - @ref uip-config
  * @section overview Overview
  * This library contains IPv4 and IPv6 network stack for pico]OS. Library
  * is based on uIP network stack which has low resource usage, making
@@ -51,10 +53,21 @@
  * Simple socket layer, which makes writing of applications much
  * easier than using standard uIP style.
  *
+ * <b>Telnet layer:</b>
+ *
+ * Simple telnet protocol layer based on socket layer to 
+ * help writing of CLI applications.
+ *
  * <b>Device drivers:</b>
  *
  * Some device drivers suitable for use with socket layer.
  * Currently drivers for ENC28J60, CS8900A and unix tap are included.
+ *
+ * Typical packet flow when using socket layer is:
+ *
+ * in:  ::netInterfacePoll -> ::netEthernetInput -> arp -> uip:tcpip_input
+ *
+ * out: uip:tcpip_output -> ::netInterfaceOutput -> ::netEthernetOutput -> arp -> ::netInterfaceXmit
  */
 
 /** @defgroup api   Network API */
@@ -71,18 +84,27 @@ extern "C"
 #include <net/uip_arp.h>
 
 /**
+ * @defgroup driver-api Driver API
  * @ingroup api
  * @{
  */
 
-/*
- * Packet flow
- * in:  netInterfacePoll -> netEthernetInput -> arp -> uip:tcpip_input
- * out: uip:tcpip_output -> netInterfaceOutput -> netEthernetOutput -> arp -> netInterfaceXmit
+/**
+ * Device driver function: Transmit current packet to network.
  */
-
 void netInterfaceXmit(void);
+
+/**
+ * Device driver function: Poll network adapter for packet. Function should
+ * return true if packet is available. It must also deliver the packet for
+ * network stack by calling ::netEthernetInput.
+ */
 bool netInterfacePoll(void);
+
+/**
+ * Device driver function: Initialize network interface. Called by socket layer
+ * main loop during startup.
+ */
 void netInterfaceInit(void);
 
 /**
@@ -116,26 +138,89 @@ void netEthernetOutput(uip_lladdr_t* lla);
 void netEthernetOutput(void);
 #endif
 
-#if NETCFG_SOCKETS == 1
+#if NETCFG_SOCKETS == 1 || DOX == 1
+
+/**
+ * Called from network driver interrupt code to wake up 
+ * main loop, causing immediate processing of packet.
+ */
+void netInterrupt(void);
+
+/**
+ * Called by network driver init code to
+ * enable device polling (instead of using interrupts).
+ */
+void netEnableDevicePolling(UINT_t ticks);
+
+/** @} */
+
+/**
+ * @defgroup socket-api Socket API
+ * @ingroup api
+ * @{
+*/
+
+/** 
+ * Initialize socket layer. Before calling this Ethernet and IP address setup
+ * must be performed using uip_setethaddr and uip_sethostaddr. 
+ *
+ * After initializing network interface function starts a thread for main loop,
+ * which performs necessary uIP services for socket layer.
+ */
 void netInit(void);
 NetSock* netSockUdpCreate(uip_ipaddr_t* ip, int port);
 
-#if UIP_ACTIVE_OPEN == 1
+#if UIP_ACTIVE_OPEN == 1 || DOX == 1
+
+/**
+ * Create new client connection to given IP address and port.
+ */
 NetSock* netSockConnect(uip_ipaddr_t* ip, int port);
+
 #endif
 
+/**
+ * Set **accept hook** function to handling incoming connections.
+ * After accept hook is called by main loop it is responsible
+ * for handling the connection. Usually a new pico]OS thread
+ * is created to process data.
+ * 
+ * Accept hook should not block.
+ * 
+ * Accept hook provides functionality that is similar to unix *accept()*.
+ */
 void netSockAcceptHookSet(NetSockAcceptHook hook);
+
+/**
+ * Read data from socket. Similar to unix *read()*.
+ * Function blocks until data is available.
+ */
 int netSockRead(NetSock* sock, void* data, uint16_t max, uint16_t timeout);
+
+/**
+ * Read a line (terminated by CR or NL) from socket.
+ */
 int netSockReadLine(NetSock* sock, void* data, uint16_t max, uint16_t timeout);
+
+/**
+ * Write data to socket.
+ */
 int netSockWrite(NetSock* sock, const void* data, uint16_t len);
+
+/**
+ * Close a connection.
+ */
 void netSockClose(NetSock* sock);
+
+/*
+ * Main thread.
+ */
+ 
 void netMainThread(void* arg);
-void netInterrupt(void);
-void netEnableDevicePolling(UINT_t ticks);
 
 #endif
 
-#if NETCFG_TELNETD == 1
+#if NETCFG_TELNETD == 1 || DOX == 1
 
 typedef struct {
 
@@ -148,9 +233,25 @@ typedef struct {
   NetSock* sock;
 } NetTelnet;
 
+/**
+ * Initialize telnet protocol state machine for given socket connection.
+ */
 void telnetInit(NetTelnet* state, NetSock* sock);
+
+/**
+ * Write data using telnet protocol.
+ */
 void telnetWrite(NetTelnet* conn, char* data);
+
+/** 
+ * Flush data. Causes immediate sending of data that has been buffered.
+ */
 void telnetFlush(NetTelnet* conn);
+
+/**
+ * Read a line from socket using telnet protocol.
+ * Handly when writing CLI servers.
+ */
 int telnetReadLine(NetTelnet* conn, char* data, int max, int timeout);
 
 #endif
