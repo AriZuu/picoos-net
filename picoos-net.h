@@ -40,20 +40,21 @@
  * - @ref api
  * - @ref config
  * @section overview Overview
- * This library contains miscellaneous routines built on pico]OS pico & nano layers.
+ * This library contains IPv4 and IPv6 network stack for pico]OS. Library
+ * is based on uIP network stack which has low resource usage, making
+ * it suitable for all kinds of microcontrollers. uIP project
+ * lives under Contiki OS nowadays.
  *
  * @subsection features Features
- * <b>Microsecond delay:</b>
+ * <b>Socket layer:</b>
  *
- * Implementation of microsecond delay using a spin-loop. Depending on CPU it uses either 
- * simple delay loop or hardware timer.
+ * Simple socket layer, which makes writing of applications much
+ * easier than using standard uIP style.
  *
- * <b>FAT filesystem:</b>
+ * <b>Device drivers:</b>
  *
- * Implementation of FAT filesystem from <a href="http://elm-chan.org/fsw/ff/00index_e.html">elm-chan.</a>
- * Currently only readonly mode is used and application must provide
- * functions like disk_initialize, disk_read and disk_status that handle
- * access to real hardware (like SD-card for example).
+ * Some device drivers suitable for use with socket layer.
+ * Currently drivers for ENC28J60, CS8900A and unix tap are included.
  */
 
 /** @defgroup api   Network API */
