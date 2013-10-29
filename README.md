@@ -8,7 +8,8 @@ ie. after contiki 2.6. Support for both IPv4 and ipV6 is included.
 In addition to standard uIP stack library includes a simple
 socket-like layer to make programming easier.
 
-For additional details see [this article][1].
+For additional details see [this article][1] or [manual][2].
 
 [1]: http://stonepile.fi/uip-based-network-layer-for-picoos/
+[2]: http://arizuu.github.io/picoos-net
 
