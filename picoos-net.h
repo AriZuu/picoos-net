@@ -31,7 +31,7 @@
 /**
  * @file    picoos-net.h
  * @brief   Include file of pico]OS network library.
- * @author  Ari Suutari
+ * @author  Ari Suutari <ari@stonepile.fi>
  */
 
 /**

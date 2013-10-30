@@ -31,7 +31,7 @@
 /**
  * @file    netcfg.h
  * @brief   picoos-net library configuration file
- * @author  Ari Suutari
+ * @author  Ari Suutari <ari@stonepile.fi>
  */
 
 /** @defgroup uip-config uIP configuration settings.
