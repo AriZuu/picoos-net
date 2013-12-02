@@ -71,11 +71,6 @@
  */
 
 #include "net/uip.h"
-
-/*
- * Pico]OS: include uip_arch.h for uip_add32 prototype.
- */
-#include "net/uip_arch.h"
 #include "net/uipopt.h"
 #include "net/uip-icmp6.h"
 #include "net/uip-nd6.h"
@@ -149,25 +144,25 @@ uint8_t uip_ext_opt_offset = 0;
  *  @{
  */
 /* 
- * Pico]OS: Use uip_buf32 macro to ensure 16/32-bit alignment.
+ * Pico]OS: Use uip_buf32 macro to ensure 32-bit alignment.
  *          Allows compiling with gcc -Wcast-align.
  */
 #define FBUF                             ((struct uip_tcpip_hdr *)&uip_reassbuf[0])
-#define UIP_IP_BUF                          ((struct uip_ip_hdr *)&uip_buf16(UIP_LLH_LEN))
-#define UIP_ICMP_BUF                      ((struct uip_icmp_hdr *)&uip_buf16(uip_l2_l3_hdr_len))
-#define UIP_UDP_BUF                        ((struct uip_udp_hdr *)&uip_buf16((UIP_LLH_LEN + UIP_IPH_LEN)))
-#define UIP_TCP_BUF                        ((struct uip_tcp_hdr *)&uip_buf16((UIP_LLH_LEN + UIP_IPH_LEN)))
-#define UIP_EXT_BUF                        ((struct uip_ext_hdr *)&uip_buf16(uip_l2_l3_hdr_len))
-#define UIP_ROUTING_BUF                ((struct uip_routing_hdr *)&uip_buf16(uip_l2_l3_hdr_len))
+#define UIP_IP_BUF                          ((struct uip_ip_hdr *)&uip_buf32(UIP_LLH_LEN))
+#define UIP_ICMP_BUF                      ((struct uip_icmp_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
+#define UIP_UDP_BUF                        ((struct uip_udp_hdr *)&uip_buf32((UIP_LLH_LEN + UIP_IPH_LEN)))
+#define UIP_TCP_BUF                        ((struct uip_tcp_hdr *)&uip_buf32((UIP_LLH_LEN + UIP_IPH_LEN)))
+#define UIP_EXT_BUF                        ((struct uip_ext_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
+#define UIP_ROUTING_BUF                ((struct uip_routing_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
 #define UIP_FRAG_BUF                      ((struct uip_frag_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
-#define UIP_HBHO_BUF                      ((struct uip_hbho_hdr *)&uip_buf16(uip_l2_l3_hdr_len))
-#define UIP_DESTO_BUF                    ((struct uip_desto_hdr *)&uip_buf16(uip_l2_l3_hdr_len))
-#define UIP_EXT_HDR_OPT_BUF            ((struct uip_ext_hdr_opt *)&uip_buf16(uip_l2_l3_hdr_len + uip_ext_opt_offset))
-#define UIP_EXT_HDR_OPT_PADN_BUF  ((struct uip_ext_hdr_opt_padn *)&uip_buf16(uip_l2_l3_hdr_len + uip_ext_opt_offset))
+#define UIP_HBHO_BUF                      ((struct uip_hbho_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
+#define UIP_DESTO_BUF                    ((struct uip_desto_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
+#define UIP_EXT_HDR_OPT_BUF            ((struct uip_ext_hdr_opt *)&uip_buf32(uip_l2_l3_hdr_len + uip_ext_opt_offset))
+#define UIP_EXT_HDR_OPT_PADN_BUF  ((struct uip_ext_hdr_opt_padn *)&uip_buf32(uip_l2_l3_hdr_len + uip_ext_opt_offset))
 #if UIP_CONF_IPV6_RPL
-#define UIP_EXT_HDR_OPT_RPL_BUF    ((struct uip_ext_hdr_opt_rpl *)&uip_buf16(uip_l2_l3_hdr_len + uip_ext_opt_offset))
+#define UIP_EXT_HDR_OPT_RPL_BUF    ((struct uip_ext_hdr_opt_rpl *)&uip_buf32(uip_l2_l3_hdr_len + uip_ext_opt_offset))
 #endif /* UIP_CONF_IPV6_RPL */
-#define UIP_ICMP6_ERROR_BUF            ((struct uip_icmp6_error *)&uip_buf16(uip_l2_l3_icmp_hdr_len))
+#define UIP_ICMP6_ERROR_BUF            ((struct uip_icmp6_error *)&uip_buf32(uip_l2_l3_icmp_hdr_len))
 /** @} */
 /** \name Buffer variables
  *  @{
@@ -511,11 +506,7 @@ uip_connect(uip_ipaddr_t *ripaddr, uint16_t rport)
 }
 #endif /* UIP_TCP && UIP_ACTIVE_OPEN */
 /*---------------------------------------------------------------------------*/
-
-/*
- * Pico]OS: declare function as static to avoid warning.
- */
-static void
+void
 remove_ext_hdr(void)
 {
   /* Remove ext header before TCP/UDP processing. */
@@ -1482,7 +1473,6 @@ uip_process(uint8_t flag)
   remove_ext_hdr();
 
   PRINTF("Receiving UDP packet\n");
-  UIP_STAT(++uip_stat.udp.recv);
  
   /* UDP processing is really just a hack. We don't do anything to the
      UDP/IP headers, but let the UDP application do all the hard
@@ -1534,10 +1524,10 @@ uip_process(uint8_t flag)
     }
   }
   PRINTF("udp: no matching connection found\n");
+  UIP_STAT(++uip_stat.udp.drop);
 
 #if UIP_UDP_SEND_UNREACH_NOPORT
   uip_icmp6_error_output(ICMP6_DST_UNREACH, ICMP6_DST_UNREACH_NOPORT, 0);
-  UIP_STAT(++uip_stat.ip.drop);
   goto send;
 #else
   goto drop;
@@ -1545,6 +1535,7 @@ uip_process(uint8_t flag)
 
  udp_found:
   PRINTF("In udp_found\n");
+  UIP_STAT(++uip_stat.udp.recv);
  
   uip_conn = NULL;
   uip_flags = UIP_NEWDATA;
@@ -1578,6 +1569,10 @@ uip_process(uint8_t flag)
   uip_ds6_select_src(&UIP_IP_BUF->srcipaddr, &UIP_IP_BUF->destipaddr);
 
   uip_appdata = &uip_buf[UIP_LLH_LEN + UIP_IPTCPH_LEN];
+
+#if UIP_CONF_IPV6_RPL
+  rpl_insert_header();
+#endif /* UIP_CONF_IPV6_RPL */
 
 #if UIP_UDP_CHECKSUMS
   /* Calculate UDP checksum. */

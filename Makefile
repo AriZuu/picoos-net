@@ -58,6 +58,9 @@ SRC_TXT =	sock.c \
 		net/uip-icmp6.c \
 		net/uip-ds6.c \
 		net/uip-ds6-route.c \
+		net/uip-ds6-nbr.c \
+		net/nbr-table.c \
+		net/rime/rimeaddr.c \
 		net/uip-nd6.c \
 		net/uiplib.c \
 
