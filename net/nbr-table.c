@@ -32,7 +32,7 @@
  *          Joris Borms <joris.borms@vub.ac.be>
  */
 
-//#include "contiki.h"
+#include "net/uip.h"
 
 #include <stddef.h>
 #include <string.h>

@@ -71,6 +71,11 @@
  */
 
 #include "net/uip.h"
+
+/*
+ * Pico]OS: include uip_arch.h for uip_add32 prototype.
+ */
+#include "net/uip_arch.h"
 #include "net/uipopt.h"
 #include "net/uip-icmp6.h"
 #include "net/uip-nd6.h"
@@ -506,7 +511,11 @@ uip_connect(uip_ipaddr_t *ripaddr, uint16_t rport)
 }
 #endif /* UIP_TCP && UIP_ACTIVE_OPEN */
 /*---------------------------------------------------------------------------*/
-void
+
+/*
+ * Pico]OS: declare function as static to avoid warning.
+ */
+static void
 remove_ext_hdr(void)
 {
   /* Remove ext header before TCP/UDP processing. */

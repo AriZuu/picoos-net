@@ -70,6 +70,7 @@ CDEFINES += $(BSP_DEFINES)
 DIR_USRINC +=   ../picoos-micro  \
 		uip/apps/telnetd
 
+EXTRA_CFLAGS = -Wno-shadow
 include drivers/Makefile
 
 ifeq '$(strip $(DIR_OUTPUT))' ''

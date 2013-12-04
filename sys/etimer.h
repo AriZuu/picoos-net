@@ -112,6 +112,8 @@ CCIF void etimer_set(struct etimer *et, clock_time_t interval);
  */
 CCIF void etimer_reset(struct etimer *et);
 
+#ifndef POS_VER_N
+
 /**
  * \brief      Restart an event timer from the current point in time
  * \param et   A pointer to the event timer.
@@ -170,6 +172,8 @@ clock_time_t etimer_expiration_time(struct etimer *et);
  */
 clock_time_t etimer_start_time(struct etimer *et);
 
+#endif
+
 /**
  * \brief      Check if an event timer has expired.
  * \param et   A pointer to the event timer
@@ -193,6 +197,8 @@ CCIF int etimer_expired(struct etimer *et);
 void etimer_stop(struct etimer *et);
 
 /** @} */
+
+#ifndef POS_VER_N
 
 /**
  * \name Functions called from timer interrupts, by the system
@@ -230,6 +236,7 @@ int etimer_pending(void);
  */
 clock_time_t etimer_next_expiration_time(void);
 
+#endif
 
 /** @} */
 

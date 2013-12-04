@@ -1150,10 +1150,6 @@ uip_process(uint8_t flag)
     }
   }
   UIP_LOG("udp: no matching connection found");
-
-/*
- * Pico]OS: Update UDP statistics.
- */
   UIP_STAT(++uip_stat.udp.drop);
 #if UIP_CONF_ICMP_DEST_UNREACH && !UIP_CONF_IPV6
   /* Copy fields from packet header into payload of this ICMP packet. */
@@ -1188,10 +1184,6 @@ uip_process(uint8_t flag)
 #endif /* UIP_CONF_ICMP_DEST_UNREACH */
   
  udp_found:
-
-/*
- * Pico]OS: Update UDP statistics.
- */
   UIP_STAT(++uip_stat.udp.recv);
   uip_conn = NULL;
   uip_flags = UIP_NEWDATA;
@@ -1240,9 +1232,6 @@ uip_process(uint8_t flag)
   }
 #endif /* UIP_UDP_CHECKSUMS */
   
-/*
- * Pico]OS: Update UDP statistics.
- */
   UIP_STAT(++uip_stat.udp.sent);
   goto ip_send_nolen;
 #endif /* UIP_UDP */
