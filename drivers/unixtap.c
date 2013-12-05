@@ -33,6 +33,10 @@
  * Simple TAP driver for FreeBSD & Pico]OS
  */
 
+#ifdef _XOPEN_SOURCE
+#undef _XOPEN_SOURCE // This driver needs BSD stuff.
+#endif
+
 #include <picoos.h>
 #include <picoos-net.h>
 

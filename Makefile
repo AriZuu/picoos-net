@@ -66,11 +66,10 @@ SRC_TXT =	sock.c \
 
 SRC_HDR =	
 SRC_OBJ =
-CDEFINES += $(BSP_DEFINES)
+CDEFINES += $(BSP_DEFINES) _XOPEN_SOURCE=700
 DIR_USRINC +=   ../picoos-micro  \
 		uip/apps/telnetd
 
-EXTRA_CFLAGS = -Wno-shadow
 include drivers/Makefile
 
 ifeq '$(strip $(DIR_OUTPUT))' ''
