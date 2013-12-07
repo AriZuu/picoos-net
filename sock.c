@@ -569,8 +569,10 @@ void netInit()
   uip_ds6_timer_periodic.timer = posTimerCreate();
   uip_ds6_timer_periodic.sema = giant;
 
+#if !UIP_CONF_ROUTER
   uip_ds6_timer_rs.timer = posTimerCreate();
   uip_ds6_timer_rs.sema = giant;
+#endif
   
 #endif
 
@@ -721,10 +723,12 @@ void netMainThread(void* arg)
 
 #if UIP_CONF_IPV6
    
+#if !UIP_CONF_ROUTER
     if (posTimerFired(uip_ds6_timer_rs.timer)) {
       uip_ds6_send_rs();
       tcpip_ipv6_output();
     }
+#endif
 
     if (posTimerFired(uip_ds6_timer_periodic.timer)) {
 
