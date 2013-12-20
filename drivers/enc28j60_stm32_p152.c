@@ -20,41 +20,7 @@
 
 #include "enc28j60.h"
 
-#if 0
-/* For Microcontroller Hardware Definitions */
-#include "lpc214x.h"
-#include "mcuconfig.h"
-
-extern void ENC28J60_0_IRQ(void) __attribute__((interrupt("FIQ")));
-extern void ENC28J60_1_IRQ(void) __attribute__((interrupt("FIQ")));
-
-/* A few important SPI configuration bits in the SPI Control Register (S0SPCR)
- * See LPC2148 12.4.1 */
-#define SPCR_CPHA (1<<3)    /* Clock Phase */
-#define SPCR_CPOL (1<<4)    /* Clock Polarity */
-#define SPCR_MSTR (1<<5)    /* Master=1/Slave=0 */
-#define SPCR_SPIE (1<<7)    /* SPI Interrupt Enable */
-
-/* Important status bits in the SPI Status Register (S0SPSR)
- * See LPC2148 12.4.2 */
-#define SPSR_ABRT (1<<3)    /* Slave Abort */
-#define SPSR_MODF (1<<4)    /* Mode Fault */
-#define SPSR_ROVR (1<<5)    /* Read Overrun */
-#define SPSR_WCOL (1<<6)    /* Write Collision */
-#define SPSR_SPIF (1<<7)    /* Transfer Complete Flag */
-
-/* Chip select pins of the ENC28J60s on port 0 */
-#define ENC28J60_0_CS 2
-#define ENC28J60_1_CS 10
-
-/* Interrupt pins of the ENC28J60s on port 0 */
-#define ENC28J60_0_INT  3
-#define ENC28J60_1_INT  7
-
-#endif
-
 #define CS_PIN GPIO_Pin_12
-// LED #define CS_PIN GPIO_Pin_10
 
 /**
  * Delays the specified number of milliseconds.
@@ -147,42 +113,6 @@ void enc28j60_spi_init(void) {
 
   SPI_Cmd(SPI1, ENABLE);
 
-#if 0
-  /* First configure the pins for SPI (LPC2148: 7.4.1)*/
-  /* PINSEL0 bits 9:8, 11:10, and 13:12 need to be 01
-   * to set SCK0, MISO0, and MOSI0 for SPI use.
-   */
-  PINSEL0 |= (1<<8)|(1<<10)|(1<<12);
-  PINSEL0 &= ~((1<<9)|(1<<11)|(1<<13));
-  /* Also configure the two interrupt pins as External Interrupt Function
-   * pins */
-  PINSEL0 |= (1<<6)|(1<<7)|(1<<14)|(1<<15);
-
-  /* Set the chip select pins (GPIO) to output */
-  IODIR0 |= (1<<ENC28J60_0_CS)|(1<<ENC28J60_1_CS);
-  /* Set the interrupt pins to their appropriate EXTINTx functions */
-  /* Bring the chip select pins high since we're not talking yet */
-  IOSET0 |= (1<<ENC28J60_0_CS)|(1<<ENC28J60_1_CS);
-
-  /* Set the SPI clock rate (LPC2148: 12.4.4)
-   * The ENC28J60 supports SPI clock rates up to 20MHz (see section 1.0
-   * of datasheet).
-   * Set the SPI Clock Counter Register to the division factor by
-   * dividing the processor clock rate by the desired ENC28J60 clock
-   * rate.
-   */
-  S0SPCCR = (CCLK/VPB_DIV)/ENC28J60_CLOCK;
-
-  /* Setup the SPI Control Register (12.4.1)
-   *  ENC28J60 SPI specifications (see section 4.1 of the datasheet):
-    - mode 0,0 (CPOL=0, CPHA=0)
-    - 8 bits per transfer, MSB first
-    - LPC2148 obviously is the master.
-    The only bit we need to set in S0SPCR is the Master bit,
-    everything else can remain default (0's).
-   */
-  S0SPCR = SPCR_MSTR;
-
 #ifdef ENC28J60_USE_INTERRUPTS
   /* Setup the vectored interrupts for the EINT1 and EINT2 pins. */
 
@@ -198,14 +128,9 @@ void enc28j60_spi_init(void) {
   VICVectCntl2 = 0x20 | 16;
   VICVectAddr2 = (unsigned long)ENC28J60_1_IRQ;
 #endif
-
-  /* Clear the current data in the SPI receive buffer */
-  for (i = 0; i < 8; i++)
-    dummyData = S0SPDR;
-#endif
 }
 
-#if 0
+#if 0 // todo
 /**
  * Enable the host microcontroller's pin interrupts that are connected to the
  * ethernet controller's INT pins.
@@ -232,13 +157,6 @@ void enc28j60_LPC_Interrupts_Disble(void) {
 void enc28j60_spi_select(void) {
 
   GPIO_WriteBit(GPIOE, CS_PIN, Bit_RESET);
-
-#if 0
-  if (ENC28J60_Index == 0)
-    IOCLR0 |= (1<<ENC28J60_0_CS);
-  else if (ENC28J60_Index == 1)
-    IOCLR0 |= (1<<ENC28J60_1_CS);
-#endif
 }
 
 /**
@@ -248,13 +166,6 @@ void enc28j60_spi_select(void) {
 void enc28j60_spi_deselect(void) {
 
   GPIO_WriteBit(GPIOE, CS_PIN, Bit_SET);
-
-#if 0
-  if (ENC28J60_Index == 0)
-    IOSET0 |= (1<<ENC28J60_0_CS);
-  else if (ENC28J60_Index == 1)
-    IOSET0 |= (1<<ENC28J60_1_CS);
-#endif
 }
 
 /**
@@ -274,13 +185,6 @@ void enc28j60_spi_write(uint8_t data) {
   while(SPI_I2S_GetFlagStatus(SPI1, SPI_I2S_FLAG_RXNE) == RESET);
 
   SPI_I2S_ReceiveData(SPI1);
-#if 0
-  S0SPDR = data;
-  /* Wait until the transfer complete flag clears before
-   * we write new data. */
-  while (!(S0SPSR & SPSR_SPIF))
-    ;
-#endif
 }
 
 /**
@@ -302,15 +206,6 @@ uint8_t enc28j60_spi_read(void) {
 
   // Return received byte
   return SPI_I2S_ReceiveData(SPI1);
-#if 0
-  /* Send a dummy byte */
-  S0SPDR = 0x00;
-  /* Wait until the transfer complete flag clears */
-  while (!(S0SPSR & SPSR_SPIF))
-    ;
-  /* Read the data */
-  return S0SPDR;
-#endif
 }
 
 #endif
