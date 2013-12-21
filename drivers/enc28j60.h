@@ -70,7 +70,7 @@
 #define PER_PACKET_CONTROL	0x00
 
 /** Compiles the interrupts initialization code. */
-#define ENC28J60_USE_INTERRUPTS
+//#define ENC28J60_USE_INTERRUPTS
 
 /* The ENC28J60 Internal Ethernet Buffer memory distribution for receive 
  * and transmit buffers.
