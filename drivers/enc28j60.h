@@ -50,12 +50,12 @@
 #define ENC28J60_NUM_INTERFACES	2
 
 /** MAC address */
-#define ENC28J60_MAC0	'B'
-#define ENC28J60_MAC1	'F'
-#define ENC28J60_MAC2	'F'
-#define ENC28J60_MAC3	'I'
-#define ENC28J60_MAC4	'C'
-#define ENC28J60_MAC5	'E'
+#define ENC28J60_MAC0	uip_lladdr.addr[0]
+#define ENC28J60_MAC1	uip_lladdr.addr[1]
+#define ENC28J60_MAC2	uip_lladdr.addr[2]
+#define ENC28J60_MAC3	uip_lladdr.addr[3]
+#define ENC28J60_MAC4	uip_lladdr.addr[4]
+#define ENC28J60_MAC5	uip_lladdr.addr[5]
 
 /** Ethernet controller's mode of operation: FULL_DUPLEX
  * or HALF_DUPLEX. */
