@@ -16,7 +16,7 @@
 #include <picoos.h>
 #include <picoos-net.h>
 
-#if NETCFG_DRIVER_ENC28J60 > 0
+#if NETCFG_DRIVER_ENC28J60_STM32_P152 > 0
 
 #include "enc28j60.h"
 
