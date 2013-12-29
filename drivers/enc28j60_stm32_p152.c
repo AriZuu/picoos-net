@@ -15,6 +15,7 @@
 
 #include <picoos.h>
 #include <picoos-net.h>
+#include <picoos-u.h>
 
 #if NETCFG_DRIVER_ENC28J60_STM32_P152 > 0
 
@@ -23,30 +24,9 @@
 #define CS_PIN GPIO_Pin_12
 
 /**
- * Delays the specified number of milliseconds.
- * @param ms milliseconds to delay.
- */
-void delay_ms(uint32_t ms) {
-  posTaskSleep(MS(ms));
-}
-
-/**
- * Delays the specified number of microseconds (approximately).
- * This approximate delay loop was hand tuned and is definitely not accurate.
- * @param us microseconds to delay.
- */
-void delay_us(uint32_t us) {
-  while (us-- > 0)
-    __asm("nop; nop;");
-}
-
-
-/**
  * Initializes the SPI pins, frequency, and SPI mode configuration.
  */
 void enc28j60_spi_init(void) {
-  int i;
-  uint8_t dummyData;
   /*
    * UEXT connections with STM32-P152:
    * 1 +3.3V

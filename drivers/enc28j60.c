@@ -37,6 +37,7 @@
 
 #include <picoos.h>
 #include <picoos-net.h>
+#include <picoos-u.h>
 
 #if NETCFG_DRIVER_ENC28J60 > 0
 
@@ -299,7 +300,7 @@ uint16_t enc28j60_PHY_Read(uint8_t address) {
 	enc28j60_Bitfield_Set(MICMD, MICMD_MIIRD);
 
 	/* 3. Wait until the PHY register read completes */
-	delay_us(11);
+	uosSpinUSecs(11);
 	while (enc28j60_Register_Read(MISTAT) & MISTAT_BUSY)
 		;
 
@@ -329,7 +330,7 @@ void enc28j60_PHY_Write(uint8_t address, uint16_t data) {
 	enc28j60_Register_Write(MIWRH, (uint8_t)((data>>8)));
 
 	/* 3. Wait until the PHY register write completes */
-	delay_us(11);
+	uosSpinUSecs(11);
 	while (enc28j60_Register_Read(MISTAT) & MISTAT_BUSY)
 		;
 }
@@ -348,12 +349,12 @@ void enc28j60_System_Reset(void) {
 	enc28j60_spi_deselect();	
 	
 	/* Wait until all PHY registers have been reset */
-	delay_us(50);
+	uosSpinUSecs(50);
 	
 	/* We can't poll ESTAT_CLKRDY because Microchip screwed up.
  	 * See section 2 of ENC28j60 Rev. B1 Silicon Errata. 
  	 * Instead we just wait 1ms. */
-	delay_ms(1);
+	posTaskSleep(MS(1));
 
 	/* Wait until the system reset has completed 
  	 * See section 6.4 of the ENC28J60 datasheet */

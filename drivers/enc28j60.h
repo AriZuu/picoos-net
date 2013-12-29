@@ -106,18 +106,6 @@ extern uint8_t ENC28J60_Index;
 /*** enc28j60_util.c - Delay and SPI utility functions, hardware specific. ***/
 
 /**
- * Delays the specified number of milliseconds.
- * @param ms milliseconds to delay.
- */
-void delay_ms(uint32_t ms);
-
-/**
- * Delays the specified number of microseconds (approximately).
- * @param us microseconds to delay.
- */
-void delay_us(uint32_t us);
-
-/**
  * Enable the host microcontroller's pin interrupts that are connected to the
  * ethernet controller's INT pins.
  */
