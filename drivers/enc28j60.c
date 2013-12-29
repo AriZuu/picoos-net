@@ -516,7 +516,7 @@ void enc28j60_Init(void) {
 	/* 2. Let's leave the LED configuration (PHLCON) to the defaults. */
 
 	/* Enable the filters specified in the driver header file */
-	enc28j60_Register_Write(ERXFCON, FILTER_PROMISC);
+	enc28j60_Register_Write(ERXFCON, FILTER_UNICAST);
 
 	/* --- 7.2.1 Enabling Frame Reception ---*/
 
