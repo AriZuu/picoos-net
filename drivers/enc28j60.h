@@ -91,10 +91,10 @@
 #define FILTER_PROMISC	0x00
 
 /** Unicast Filter Configuration.
- * Accepts packets destined to the ethernet controller, broadcast packets, and
- * only accepts packets with a valid CRC.
+ * Accepts packets destined to the ethernet controller, broadcast packets,
+ * multicast packets and only accepts packets with a valid CRC.
  */
-#define FILTER_UNICAST	(ERXFCON_UCEN)|(ERXFCON_CRCEN)|(ERXFCON_BCEN)
+#define FILTER_UNICAST	(ERXFCON_UCEN)|(ERXFCON_CRCEN)|(ERXFCON_BCEN)|(ERXFCON_MCEN)
 
 /*****************************************************************************/
 
