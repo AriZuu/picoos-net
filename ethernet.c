@@ -90,7 +90,7 @@ void netInterfaceInit(void)
 {
   enc28j60_spi_init();
   enc28j60_Init();
-#if !defined(ENC28J60_USE_INTERRUPTS) || ENC28J60_USE_INTERRUPTS == 0
+#ifndef ENC28J60_USE_INTERRUPTS
   netEnableDevicePolling(MS(5));
 #endif
 }
@@ -98,6 +98,9 @@ void netInterfaceInit(void)
 bool netInterfacePoll(void)
 {
   uip_len = enc28j60_Frame_Recv(uip_buf, UIP_BUFSIZE);
+#ifdef ENC28J60_USE_INTERRUPTS
+  enc28j60_Enable_Global_Interrupts();
+#endif
   if (uip_len) {
 
     netEthernetInput();
