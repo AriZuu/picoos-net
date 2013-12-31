@@ -90,7 +90,9 @@ void netInterfaceInit(void)
 {
   enc28j60_spi_init();
   enc28j60_Init();
+#if !defined(ENC28J60_USE_INTERRUPTS) || ENC28J60_USE_INTERRUPTS == 0
   netEnableDevicePolling(MS(5));
+#endif
 }
 
 bool netInterfacePoll(void)
