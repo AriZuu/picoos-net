@@ -109,13 +109,13 @@ extern uint8_t ENC28J60_Index;
  * Enable the host microcontroller's pin interrupts that are connected to the
  * ethernet controller's INT pins.
  */
-void enc28j60_LPC_Interrupts_Enable(void);
+void enc28j60_InterruptPin_Enable(void);
 
 /**
  * Disable the host microcontroller's pin interrupts that are connected to the
  * ethernet controller's INT pins.
  */
-void enc28j60_LPC_Interrupts_Disble(void);
+void enc28j60_InterruptPin_Disable(void);
 
 /**
  * Initializes the SPI pins, frequency, and SPI mode configuration.
