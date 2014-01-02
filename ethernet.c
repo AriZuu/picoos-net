@@ -97,9 +97,13 @@ void netInterfaceInit(void)
 
 bool netInterfacePoll(void)
 {
+#ifdef ENC28J60_USE_INTERRUPTS
+  enc28j60_InterruptPin_Disable();
+#endif
   uip_len = enc28j60_Frame_Recv(uip_buf, UIP_BUFSIZE);
 #ifdef ENC28J60_USE_INTERRUPTS
   enc28j60_Enable_Global_Interrupts();
+  enc28j60_InterruptPin_Enable();
 #endif
   if (uip_len) {
 
@@ -112,7 +116,13 @@ bool netInterfacePoll(void)
 
 void netInterfaceXmit(void)
 {
+#ifdef ENC28J60_USE_INTERRUPTS
+  enc28j60_InterruptPin_Disable();
+#endif
   enc28j60_Frame_Send(uip_buf, uip_len);
+#ifdef ENC28J60_USE_INTERRUPTS
+  enc28j60_InterruptPin_Enable();
+#endif
 }
 
 #endif
