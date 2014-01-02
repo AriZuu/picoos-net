@@ -629,7 +629,7 @@ void netMainThread(void* arg)
     // A Pico]OS Flag object would be perfect,
     // but it doesn't work with posTimer* functions.
 
-    if (!packetSeen)
+    if (!packetSeen || pollTicks == INFINITE)
       posSemaWait(giant, pollTicks);
 
     posMutexLock(uipMutex);
