@@ -61,8 +61,8 @@
  * Pico]OS: Use uip_buf32 macro to ensure 32-bit alignment.
  *          Allows compiling with gcc -Wcast-align.
  */
-#define UIP_IP_BUF                ((struct uip_ip_hdr *)&uip_buf32(UIP_LLH_LEN))
-#define UIP_ICMP_BUF            ((struct uip_icmp_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
+#define UIP_IP_BUF                ((struct uip_ip_hdr *)&uip_buf16(UIP_LLH_LEN))
+#define UIP_ICMP_BUF            ((struct uip_icmp_hdr *)&uip_buf16(uip_l2_l3_hdr_len))
 #define UIP_ICMP6_ERROR_BUF  ((struct uip_icmp6_error *)&uip_buf32(uip_l2_l3_icmp_hdr_len))
 #define UIP_EXT_BUF              ((struct uip_ext_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
 #define UIP_FIRST_EXT_BUF        ((struct uip_ext_hdr *)&uip_buf32(UIP_LLIPH_LEN))

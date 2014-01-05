@@ -59,9 +59,9 @@ void uip_log(char *msg);
 #define UIP_LOG(m)
 #endif
 
-#define UIP_ICMP_BUF ((struct uip_icmp_hdr *)&uip_buf32(UIP_LLIPH_LEN + uip_ext_len))
-#define UIP_IP_BUF ((struct uip_ip_hdr *)&uip_buf32(UIP_LLH_LEN))
-#define UIP_TCP_BUF ((struct uip_tcpip_hdr *)&uip_buf32(UIP_LLH_LEN))
+#define UIP_ICMP_BUF ((struct uip_icmp_hdr *)&uip_buf16(UIP_LLIPH_LEN + uip_ext_len))
+#define UIP_IP_BUF ((struct uip_ip_hdr *)&uip_buf16(UIP_LLH_LEN))
+#define UIP_TCP_BUF ((struct uip_tcpip_hdr *)&uip_buf16(UIP_LLH_LEN))
 
 #ifndef POS_VER_N
 

@@ -153,15 +153,15 @@ uint8_t uip_ext_opt_offset = 0;
  *          Allows compiling with gcc -Wcast-align.
  */
 #define FBUF                             ((struct uip_tcpip_hdr *)&uip_reassbuf[0])
-#define UIP_IP_BUF                          ((struct uip_ip_hdr *)&uip_buf32(UIP_LLH_LEN))
-#define UIP_ICMP_BUF                      ((struct uip_icmp_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
-#define UIP_UDP_BUF                        ((struct uip_udp_hdr *)&uip_buf32((UIP_LLH_LEN + UIP_IPH_LEN)))
-#define UIP_TCP_BUF                        ((struct uip_tcp_hdr *)&uip_buf32((UIP_LLH_LEN + UIP_IPH_LEN)))
+#define UIP_IP_BUF                          ((struct uip_ip_hdr *)&uip_buf16(UIP_LLH_LEN))
+#define UIP_ICMP_BUF                      ((struct uip_icmp_hdr *)&uip_buf16(uip_l2_l3_hdr_len))
+#define UIP_UDP_BUF                        ((struct uip_udp_hdr *)&uip_buf16((UIP_LLH_LEN + UIP_IPH_LEN)))
+#define UIP_TCP_BUF                        ((struct uip_tcp_hdr *)&uip_buf16((UIP_LLH_LEN + UIP_IPH_LEN)))
 #define UIP_EXT_BUF                        ((struct uip_ext_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
 #define UIP_ROUTING_BUF                ((struct uip_routing_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
 #define UIP_FRAG_BUF                      ((struct uip_frag_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
 #define UIP_HBHO_BUF                      ((struct uip_hbho_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
-#define UIP_DESTO_BUF                    ((struct uip_desto_hdr *)&uip_buf32(uip_l2_l3_hdr_len))
+#define UIP_DESTO_BUF                    ((struct uip_desto_hdr *)&uip_buf32uip_l2_l3_hdr_len))
 #define UIP_EXT_HDR_OPT_BUF            ((struct uip_ext_hdr_opt *)&uip_buf32(uip_l2_l3_hdr_len + uip_ext_opt_offset))
 #define UIP_EXT_HDR_OPT_PADN_BUF  ((struct uip_ext_hdr_opt_padn *)&uip_buf32(uip_l2_l3_hdr_len + uip_ext_opt_offset))
 #if UIP_CONF_IPV6_RPL

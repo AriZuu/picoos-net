@@ -105,8 +105,8 @@ void uip_log(char *msg);
  * Pico]OS: Use uip_buf32 macro to ensure 32-bit alignment.
  *          Allows compiling with gcc -Wcast-align.
  */
-#define UIP_IP_BUF                ((struct uip_ip_hdr *)&uip_buf32(UIP_LLH_LEN))  /**< Pointer to IP header */
-#define UIP_ICMP_BUF            ((struct uip_icmp_hdr *)&uip_buf32(uip_l2_l3_hdr_len))  /**< Pointer to ICMP header*/
+#define UIP_IP_BUF                ((struct uip_ip_hdr *)&uip_buf16(UIP_LLH_LEN))  /**< Pointer to IP header */
+#define UIP_ICMP_BUF            ((struct uip_icmp_hdr *)&uip_buf16(uip_l2_l3_hdr_len))  /**< Pointer to ICMP header*/
 /**@{  Pointers to messages just after icmp header */
 #define UIP_ND6_RS_BUF            ((uip_nd6_rs *)&uip_buf32(uip_l2_l3_icmp_hdr_len))
 #define UIP_ND6_RA_BUF            ((uip_nd6_ra *)&uip_buf32(uip_l2_l3_icmp_hdr_len))
