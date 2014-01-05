@@ -379,7 +379,7 @@ static void netTcpAppcallMutex(NetSock* sock)
   if (uip_newdata()) {
 
     bool timeout = false;
-    int dataLeft = uip_datalen();
+    uint16_t dataLeft = uip_datalen();
     char* dataPtr = uip_appdata;
 
     //nosPrintf("new data on lport %d\n", uip_ntohs(uip_conn->lport));
@@ -478,6 +478,7 @@ static void netTcpAppcallMutex(NetSock* sock)
   }
 }
 
+#if UIP_CONF_UDP == 1
 static void netUdpAppcallMutex(NetSock* sock);
 
 void netUdpAppcall()
@@ -540,6 +541,8 @@ static void netUdpAppcallMutex(NetSock* sock)
     }
   }
 }
+
+#endif
 
 void netInit()
 {
