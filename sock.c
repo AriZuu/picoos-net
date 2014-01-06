@@ -585,7 +585,11 @@ void netInit()
   uip_arp_init();
 #endif
 
+#ifdef __MSP430__
+  t = posTaskCreate(netMainThread, NULL, 10, 200);
+#else
   t = posTaskCreate(netMainThread, NULL, 10, 500);
+#endif
   P_ASSERT("netInit2", t != NULL);
   POS_SETTASKNAME(t, "uip:main");
 }
