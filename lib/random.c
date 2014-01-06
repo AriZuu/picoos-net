@@ -36,7 +36,10 @@
 
 #include <stdlib.h>
 
+#if !defined(__MSP430__)
 static unsigned int seedValue;
+#endif
+
 /*---------------------------------------------------------------------------*/
 void
 random_init(unsigned short seed)
