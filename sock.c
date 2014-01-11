@@ -45,7 +45,7 @@
 
 extern void srvTask(void* arg);
 
-static POSSEMA_t giant;
+POSSEMA_t uipGiant;
 static POSMUTEX_t uipMutex;
 static volatile int dataToSend = 0;
 static NetSockAcceptHook acceptHook = NULL;
@@ -209,7 +209,7 @@ int netSockWrite(NetSock* sock, const void* data, uint16_t len)
   sock->len = len;
 
   dataToSend = 1;
-  posSemaSignal(giant);
+  posSemaSignal(uipGiant);
 
   while (sock->state == NET_SOCK_WRITING) {
 
@@ -255,7 +255,7 @@ void netSockClose(NetSock* sock)
     sock->state = NET_SOCK_CLOSE;
 
     dataToSend = 1;
-    posSemaSignal(giant);
+    posSemaSignal(uipGiant);
 
     while (sock->state == NET_SOCK_CLOSE) {
 
@@ -553,14 +553,18 @@ void netInit()
   POSTASK_t t;
   int i;
 
-  giant = posSemaCreate(0);
+  uipGiant = posSemaCreate(0);
   uipMutex = posMutexCreate();
 
   pollTicks = INFINITE;
-  P_ASSERT("netInit", giant != NULL && uipMutex != NULL);
+  P_ASSERT("netInit", uipGiant != NULL && uipMutex != NULL);
 
-  POS_SETEVENTNAME(giant, "uip:giant");
+  POS_SETEVENTNAME(uipGiant, "uip:giant");
   POS_SETEVENTNAME(uipMutex, "uip:mutex");
+
+// Initialize contiki-style timers (used by uip code)
+
+  etimer_init();
 
   dataToSend = 0;
 
@@ -572,19 +576,9 @@ void netInit()
     uip_udp_conns[i].appstate.state = NET_SOCK_NULL;
 #endif /* UIP_UDP */
 
-#if UIP_CONF_IPV6
-  uip_ds6_timer_periodic.timer = posTimerCreate();
-  uip_ds6_timer_periodic.sema = giant;
-
-#if !UIP_CONF_ROUTER
-  uip_ds6_timer_rs.timer = posTimerCreate();
-  uip_ds6_timer_rs.sema = giant;
-#endif
-  
-#endif
-
   netInterfaceInit();
   uip_init();
+
 #if UIP_CONF_IPV6 == 0
   uip_arp_init();
 #endif
@@ -608,14 +602,14 @@ void netMainThread(void* arg)
   arpTimer = posTimerCreate();
   P_ASSERT("netMainThread1", arpTimer != NULL);
 
-  posTimerSet(arpTimer, giant, MS(10000), MS(10000));
+  posTimerSet(arpTimer, uipGiant, MS(10000), MS(10000));
   posTimerStart(arpTimer);
 #endif
 
   periodicTimer = posTimerCreate();
   P_ASSERT("netMainThread2", periodicTimer != NULL);
 
-  posTimerSet(periodicTimer, giant, MS(500), MS(500));
+  posTimerSet(periodicTimer, uipGiant, MS(500), MS(500));
   posTimerStart(periodicTimer);
 
   posMutexLock(uipMutex);
@@ -637,7 +631,7 @@ void netMainThread(void* arg)
     // but it doesn't work with posTimer* functions.
 
     if (!packetSeen || pollTicks == INFINITE)
-      posSemaWait(giant, pollTicks);
+      posSemaWait(uipGiant, pollTicks);
 
     posMutexLock(uipMutex);
 
@@ -728,34 +722,46 @@ void netMainThread(void* arg)
     }
 #endif
 
+// Run contiki-style timers.
+// Instead of posting events to process like
+// contiki does, it just calls common callback function
+// to do the work.
+
+    etimer_request_poll();
+
+  }
+}
+
+void etimer_callback(struct etimer* et)
+{
 #if UIP_CONF_IPV6
    
 #if !UIP_CONF_ROUTER
-    if (posTimerFired(uip_ds6_timer_rs.timer)) {
+    if (et == &uip_ds6_timer_rs) {
+
       uip_ds6_send_rs();
       tcpip_ipv6_output();
     }
 #endif
 
-    if (posTimerFired(uip_ds6_timer_periodic.timer)) {
+    if (et == &uip_ds6_timer_periodic) {
 
       uip_ds6_periodic();
       tcpip_ipv6_output();
     }
 #endif
 
-  }
 }
 
 void netEnableDevicePolling(UINT_t ticks)
 {
   pollTicks = ticks;
-  posSemaSignal(giant);
+  posSemaSignal(uipGiant);
 }
 
 void netInterrupt()
 {
-  posSemaSignal(giant);
+  posSemaSignal(uipGiant);
 }
 
 #endif

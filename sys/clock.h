@@ -110,34 +110,11 @@ CCIF clock_time_t clock_time(void);
 CCIF unsigned long clock_seconds(void);
 
 /**
- * Set the value of the platform seconds.
- * \param sec   The value to set.
- *
- */
-void clock_set_seconds(unsigned long sec);
-
-/**
  * Wait for a given number of ticks.
  * \param t   How many ticks.
  *
  */
 void clock_wait(clock_time_t t);
-
-/**
- * Delay a given number of microseconds.
- * \param dt   How many microseconds to delay.
- *
- * \note Interrupts could increase the delay by a variable amount.
- */
-void clock_delay_usec(uint16_t dt);
-
-/**
- * Deprecated platform-specific routines.
- *
- */
-int clock_fine_max(void);
-unsigned short clock_fine(void);
-void clock_delay(unsigned int delay);
 
 #endif /* __CLOCK_H__ */
 

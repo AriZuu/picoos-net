@@ -28,6 +28,7 @@
 
 /*
  * Copyright (c) 2004, Swedish Institute of Computer Science.
+ * Copyright (c) 2013-2014, Ari Suutari <ari@stonepile.fi>.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,6 +65,7 @@
 
 #include "sys/timer.h"
 
+
 /**
  * A timer.
  *
@@ -73,8 +75,11 @@
  * \hideinitializer
  */
 struct etimer {
-    POSTIMER_t timer;
-    POSSEMA_t sema;
+  struct etimer *next;
+  struct timer timer;
+  void (*f)(void *);
+  void *ptr;
+  bool active;
 };
 
 /**
@@ -96,6 +101,21 @@ struct etimer {
 CCIF void etimer_set(struct etimer *et, clock_time_t interval);
 
 /**
+ * \brief      Set a callback timer.
+ * \param c    A pointer to the callback timer.
+ * \param t    The interval before the timer expires.
+ * \param f    A function to be called when the timer expires.
+ * \param ptr  An opaque pointer that will be supplied as an argument to the callback function.
+ *
+ *             This function is used to set a callback timer for a time
+ *             sometime in the future. When the callback timer expires,
+ *             the callback function f will be called with ptr as argument.
+ *
+ */
+void etimer_set_callback(struct etimer *et, clock_time_t t,
+		         void (*f)(void *), void *ptr);
+
+/**
  * \brief      Reset an event timer with the same interval as was
  *             previously set.
  * \param et   A pointer to the event timer.
@@ -111,8 +131,6 @@ CCIF void etimer_set(struct etimer *et, clock_time_t interval);
  * \sa etimer_restart()
  */
 CCIF void etimer_reset(struct etimer *et);
-
-#ifndef POS_VER_N
 
 /**
  * \brief      Restart an event timer from the current point in time
@@ -172,8 +190,6 @@ clock_time_t etimer_expiration_time(struct etimer *et);
  */
 clock_time_t etimer_start_time(struct etimer *et);
 
-#endif
-
 /**
  * \brief      Check if an event timer has expired.
  * \param et   A pointer to the event timer
@@ -197,8 +213,6 @@ CCIF int etimer_expired(struct etimer *et);
 void etimer_stop(struct etimer *et);
 
 /** @} */
-
-#ifndef POS_VER_N
 
 /**
  * \name Functions called from timer interrupts, by the system
@@ -236,7 +250,21 @@ int etimer_pending(void);
  */
 clock_time_t etimer_next_expiration_time(void);
 
-#endif
+/**
+ * \brief      Callback for etimers (instead of contiki event)
+ *
+ *             This function is called when event timer fires,
+ *             instead of sending contiki process event.
+ */
+void etimer_callback(struct etimer*);
+
+/**
+ * \brief      Initialize the event timer library.
+ *
+ *             This function initializes the event timer library and
+ *             should be called from the system boot up code.
+ */
+void etimer_init(void);
 
 /** @} */
 

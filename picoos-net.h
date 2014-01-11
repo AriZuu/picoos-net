@@ -258,6 +258,8 @@ int telnetReadLine(NetTelnet* conn, char* data, int max, int timeout);
 
 /** @} */
 
+extern POSSEMA_t uipGiant;
+
 #ifdef __cplusplus
 } // extern "C"
 #endif /* __cplusplus */

@@ -29,10 +29,15 @@
  */
 
 #include <picoos.h>
+#include <picoos-u.h>
 #include <picoos-net.h>
-#include <string.h>
+#include <sys/clock.h>
 
-clock_time_t clock_time()
+void clock_init(void)
+{
+}
+
+clock_time_t clock_time(void)
 {
   return jiffies;
 }
@@ -41,3 +46,9 @@ unsigned long clock_seconds(void)
 {
   return jiffies / HZ;
 }
+
+void clock_wait(clock_time_t t)
+{
+  posTaskSleep(t);
+}
+

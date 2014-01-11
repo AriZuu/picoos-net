@@ -47,8 +47,9 @@ SRC_TXT =	sock.c \
 		lib/memb.c	\
 		sys/stimer.c	\
 		sys/timer.c	\
-		sys/etimer-glue.c	\
-		sys/clock-glue.c	\
+		sys/etimer.c	\
+		sys/ctimer.c	\
+		sys/clock.c	\
 		net/uip.c	\
 		net/uip-split.c \
 		net/uip_arp.c \

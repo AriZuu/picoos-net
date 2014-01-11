@@ -44,7 +44,8 @@
  *
  */
 
-#include "contiki-conf.h"
+#include <picoos.h>
+#include <picoos-net.h>
 #include "sys/clock.h"
 #include "sys/timer.h"
 
