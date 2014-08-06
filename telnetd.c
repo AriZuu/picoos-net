@@ -75,7 +75,6 @@ void telnetWrite(NetTelnet* conn, char* data)
 {
   int len = strlen(data);
 
-      //nosPrintf("writing %s", data);
   while (len) {
 
     if ((size_t)(conn->outPtr - conn->outBuf + 1) >= sizeof(conn->outBuf)) {
@@ -100,10 +99,6 @@ void telnetWrite(NetTelnet* conn, char* data)
     ++data;
     --len;
   }
-
-      //nosPrint ("write ok \n");
-//  if (bufPtr != buf)
-//    netSockWrite(sock, buf, bufPtr - buf);
 }
 
 void telnetFlush(NetTelnet* conn)

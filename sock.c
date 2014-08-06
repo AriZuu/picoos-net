@@ -165,8 +165,6 @@ NetSock* netSockConnect(uip_ipaddr_t* ip, int port)
   sock->state = NET_SOCK_CONNECT;
   posMutexUnlock(uipMutex);
 
-  //posFlagSet(sock->sockChange, 0);
-
   while (sock->state == NET_SOCK_CONNECT) {
 
     posMutexUnlock(sock->mutex);
@@ -319,7 +317,6 @@ void netSockClose(NetSock* sock)
 
   if (sock->state == NET_SOCK_BUSY) {
 
-    //nosPrint("close request to uip\n");
     sock->state = NET_SOCK_CLOSE;
 
     dataToSend = 1;
@@ -327,13 +324,10 @@ void netSockClose(NetSock* sock)
 
     while (sock->state == NET_SOCK_CLOSE) {
 
-      //nosPrint("close wait... \n");
       posMutexUnlock(sock->mutex);
       posFlagGet(sock->uipChange, POSFLAG_MODE_GETMASK);
       posMutexLock(sock->mutex);
     }
-
-    //nosPrint("close done \n");
   }
 
   if (sock->state == NET_SOCK_LISTENING) {
@@ -347,7 +341,6 @@ void netSockClose(NetSock* sock)
                           sock->state == NET_SOCK_PEER_ABORTED || 
                           sock->state == NET_SOCK_CLOSE_OK));
 
-  //nosPrint("close destroy req \n");
   sock->state = NET_SOCK_DESTROY;
   posFlagSet(sock->sockChange, 0);
   posMutexUnlock(sock->mutex);
@@ -363,8 +356,6 @@ void netTcpAppcall()
   if (uip_connected()) {
     
     if (sock->state == NET_SOCK_NULL) {
-
-      //nosPrint("New connection\n");
 
       if (acceptHook != NULL) {
 
@@ -433,7 +424,6 @@ void netTcpAppcall()
 
   if (sock->mutex == NULL) {
 
-    //nosPrint("sock already gone.\n");
     return;
   }
 
@@ -445,19 +435,16 @@ void netTcpAppcall()
 
 static void netAppcallClose(NetSock* sock, NetSockState nextState)
 {
-  //nosPrint("uip service close\n");
   sock->state = nextState;
   posFlagSet(sock->uipChange, 0);
 
   while (sock->state != NET_SOCK_DESTROY) {
 
-    //nosPrint("uip wait destroy permission\n");
     posMutexUnlock(sock->mutex);
     posFlagGet(sock->sockChange, POSFLAG_MODE_GETMASK);
     posMutexLock(sock->mutex);
   }
 
-  //nosPrint("uipdestroy sock\n");
   netSockDestroy(sock);
 }
 
@@ -465,37 +452,28 @@ static void netTcpAppcallMutex(NetSock* sock)
 {
   if (uip_aborted()) {
 
-    //nosPrint("aborted\n");
     netAppcallClose(sock, NET_SOCK_PEER_ABORTED);
-    //srvClose(s);
   }
 
   if (uip_timedout()) {
 
-    //nosPrint("timeout\n");
     netAppcallClose(sock, NET_SOCK_PEER_ABORTED);
-    //srvClose(s);
   }
 
   if(uip_acked()) {
-
-    //nosPrintf("Ack len %d\n", uip_conn->len);
 
     if (sock->state == NET_SOCK_WRITING) {
 
       if (sock->len <= uip_mss()) {
 
-        //nosPrint("all sent");
         sock->len = 0;
         sock->state = NET_SOCK_WRITE_OK;
         posFlagSet(sock->uipChange, 0);
-        // done signal sem
       }
       else {
 
         sock->buf = sock->buf + uip_mss();
         sock->len -= uip_mss();
-      //nosPrintf("write rest %d\n", sock->len);
         uip_send(sock->buf, sock->len);
       }
     }
@@ -507,14 +485,12 @@ static void netTcpAppcallMutex(NetSock* sock)
     uint16_t dataLeft = uip_datalen();
     char* dataPtr = uip_appdata;
 
-    //nosPrintf("new data on lport %d\n", uip_ntohs(uip_conn->lport));
     while (dataLeft > 0 && !timeout) {
 
       while (sock->state != NET_SOCK_READING &&
              sock->state != NET_SOCK_READING_LINE && 
              !timeout) {
 
-      //nosPrintf(" read wait, sock state now %d\n", sock->state);
         posMutexUnlock(sock->mutex);
         timeout = posFlagWait(sock->sockChange, MS(500)) == 0;
         posMutexLock(sock->mutex);
@@ -523,7 +499,6 @@ static void netTcpAppcallMutex(NetSock* sock)
       if (timeout) {
 
         // Timeout or bad state
-        //nosPrint("** ABORT IN READ **\n");
         uip_abort();
         netAppcallClose(sock, NET_SOCK_PEER_ABORTED);
       }
@@ -550,7 +525,6 @@ static void netTcpAppcallMutex(NetSock* sock)
             break;
         }
 
-//          nosPrintf("line ok, len %d max %d, dataleft %d\n", sock->len, sock->max, dataLeft);
         if (sock->len && (sock->len == sock->max || sock->buf[sock->len - 1] == '\n')) {
 
           sock->state = NET_SOCK_READ_OK;
@@ -572,20 +546,16 @@ static void netTcpAppcallMutex(NetSock* sock)
         posFlagSet(sock->uipChange, 0);
       }
     }
-    //nosPrint("new data handled\n");
   }
 
   if (uip_rexmit()) {
 
-    //nosPrint("re transmit\n");
     uip_send(sock->buf, sock->len);
   }
 
   if (uip_closed()) {
 
-    //nosPrint("closed\n");
     netAppcallClose(sock, NET_SOCK_PEER_CLOSED);
-    //srvClose(s);
   }
 
   if (uip_poll()) {
@@ -597,7 +567,6 @@ static void netTcpAppcallMutex(NetSock* sock)
     }
     else if (sock->state == NET_SOCK_WRITING) {
 
-      //nosPrintf("write %d\n", sock->len);
       uip_send(sock->buf, sock->len);
     }
   }
@@ -613,7 +582,6 @@ void netUdpAppcall()
 
   if (sock->mutex == NULL) {
 
-    //nosPrint("sock already gone.\n");
     return;
   }
 
