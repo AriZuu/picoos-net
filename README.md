@@ -5,8 +5,11 @@ This is a uIP-based network stack for pico]OS.
 It is currently based on version 2.7 of [contiki][3].
 Support for both IPv4 and ipV6 is included.
 
-In addition to standard uIP stack library includes a simple
-socket-like layer to make programming easier.
+In addition to standard uIP stack library includes two
+socket layers ("native" and BSD sockets) to make programming easier. 
+BSD socket layer contains only basic functionality but should
+enable writing programs that are compatible with other environments
+using sockets.
 
 Library includes some device drivers. Enc28j60 is quite
 common chip, [driver being used currently][4] is written by
