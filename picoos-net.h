@@ -74,6 +74,7 @@
 /** @defgroup config   Configuration */
 
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C"
@@ -168,7 +169,32 @@ void netEnableDevicePolling(UINT_t ticks);
  * which performs necessary uIP services for socket layer.
  */
 void netInit(void);
+
+/**
+ * Initialize BSD socket layer (called automatically by netInit).
+ */
+void netInitBSDSockets(void);
+
+/**
+ * Create new UDP socket.
+ */
 NetSock* netSockUdpCreate(uip_ipaddr_t* ip, int port);
+
+/**
+ * Create a server socket, for listening incoming connections.
+ */
+NetSock* netSockServerCreate(int port);
+
+/**
+ * Start listening for incoming connections.
+ * Port is set during netSockServerCreate().
+ */
+void netSockListen(NetSock* sock);
+
+/**
+ * Accept new incoming connection.
+ */
+NetSock* netSockAccept(NetSock* listenSocket, uip_ipaddr_t* peer);
 
 #if UIP_ACTIVE_OPEN == 1 || DOX == 1
 
@@ -222,6 +248,10 @@ void netMainThread(void* arg);
 
 #if NETCFG_TELNETD == 1 || DOX == 1
 
+#if !NETCFG_BSD_SOCKETS || !NETCFG_COMPAT_SOCKETS
+#error BSD sockets required for telnet.
+#endif
+
 typedef struct {
 
   int   state;
@@ -230,13 +260,13 @@ typedef struct {
   int   inLen;
   char  outBuf[80];
   char* outPtr;
-  NetSock* sock;
+  int   sock;
 } NetTelnet;
 
 /**
  * Initialize telnet protocol state machine for given socket connection.
  */
-void telnetInit(NetTelnet* state, NetSock* sock);
+void telnetInit(NetTelnet* state, int sock);
 
 /**
  * Write data using telnet protocol.

@@ -39,6 +39,7 @@ include $(RELROOT)make/common.mak
 
 TARGET = picoos-net
 SRC_TXT =	sock.c \
+		bsdsock.c \
 		telnetd.c \
 		tcpip-glue.c \
 		ethernet.c \

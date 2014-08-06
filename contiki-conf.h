@@ -53,6 +53,16 @@ typedef JIF_t clock_time_t;
 #define NETCFG_UIP_SPLIT 1
 #endif
 
+#ifndef NETCFG_BSD_SOCKETS
+#define NETCFG_BSD_SOCKETS 1
+#endif
+
+#if NETCFG_BSD_SOCKETS
+#ifndef NETCFG_COMPAT_SOCKETS
+#define NETCFG_COMPAT_SOCKETS 1
+#endif
+#endif
+
 #ifndef UIP_CONF_BYTE_ORDER
 #define UIP_CONF_BYTE_ORDER       LITTLE_ENDIAN
 #endif
@@ -74,7 +84,10 @@ typedef enum {
   NET_SOCK_CLOSE_OK,
   NET_SOCK_PEER_CLOSED,
   NET_SOCK_PEER_ABORTED,
-  NET_SOCK_DESTROY
+  NET_SOCK_DESTROY,
+  NET_SOCK_LISTENING,
+  NET_SOCK_ACCEPTING,
+  NET_SOCK_ACCEPTED
 
 } NetSockState;
 
@@ -89,9 +102,21 @@ struct netSockState {
   POSMUTEX_t mutex;
 
   NetSockState state;
-  uint16_t len;
-  uint16_t max;
-  char* buf;
+
+  union {
+    struct {
+      // for sockets that are listening
+      int port;
+      struct uip_conn* newConnection;
+    };
+    struct {
+      // for sockets that are connected
+      UINT_t timeout;
+      uint16_t len;
+      uint16_t max;
+      char* buf;
+    };
+  };
 };
 
 typedef struct netSockState volatile NetSock;

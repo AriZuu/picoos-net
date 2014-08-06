@@ -32,6 +32,7 @@
 #include <picoos.h>
 #include <picoos-net.h>
 #include <string.h>
+#include "sys/socket.h"
 
 #if NETCFG_TELNETD == 1
 
@@ -53,13 +54,20 @@
 #define TELNET_DO    253
 #define TELNET_DONT  254
 
-void telnetInit(NetTelnet* state, NetSock* sock)
+void telnetInit(NetTelnet* state, int sock)
 {
+  struct timeval tv;
+
   state->outPtr = state->outBuf;
   state->inPtr  = state->inBuf;
   state->inLen  = 0;
   state->state = STATE_NORMAL;
-  state->inLen = netSockRead(sock, state->inBuf, sizeof(state->inBuf), MS(500));
+  
+  tv.tv_sec = 0;
+  tv.tv_usec = 500 * 1000L;
+
+  setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+  state->inLen = recv(sock, state->inBuf, sizeof(state->inBuf), 0);
   state->sock = sock;
 }
 
@@ -72,7 +80,7 @@ void telnetWrite(NetTelnet* conn, char* data)
 
     if ((size_t)(conn->outPtr - conn->outBuf + 1) >= sizeof(conn->outBuf)) {
 
-      netSockWrite(conn->sock, conn->outBuf, conn->outPtr - conn->outBuf);
+      send(conn->sock, conn->outBuf, conn->outPtr - conn->outBuf, 0);
       conn->outPtr = conn->outBuf;
     }
 
@@ -102,7 +110,7 @@ void telnetFlush(NetTelnet* conn)
 {
   if (conn->outPtr != conn->outBuf) {
 
-    netSockWrite(conn->sock, conn->outBuf, conn->outPtr - conn->outBuf);
+    send(conn->sock, conn->outBuf, conn->outPtr - conn->outBuf, 0);
     conn->outPtr = conn->outBuf;
   }
 }
@@ -111,7 +119,7 @@ static void sendOpt(NetTelnet* conn, uint8_t option, uint8_t value)
 {
   if ((size_t)(conn->outPtr - conn->outBuf + 2) >= sizeof(conn->outBuf)) {
 
-     netSockWrite(conn->sock, conn->outBuf, conn->outPtr - conn->outBuf);
+     send(conn->sock, conn->outBuf, conn->outPtr - conn->outBuf, 0);
      conn->outPtr = conn->outBuf;
    }
 
@@ -126,12 +134,17 @@ int telnetReadLine(NetTelnet* conn, char* data, int max, int timeout)
   int len = 0;
   bool gotLine = false;
   max = max - 1;
+  struct timeval tv;
 
   do {
     
     if (conn->inLen == 0) {
 
-      conn->inLen = netSockRead(conn->sock, conn->inBuf, sizeof(conn->inBuf), timeout);
+      tv.tv_sec = 0;
+      tv.tv_usec = timeout * 1000L;
+
+      setsockopt(conn->sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+      conn->inLen = recv(conn->sock, conn->inBuf, sizeof(conn->inBuf), 0);
       conn->inPtr = conn->inBuf;
       if (conn->inLen <= 0)
         return conn->inLen;
