@@ -48,7 +48,8 @@
 #define SOCKADDR2PORT(sa) (((struct sockaddr_in*)sa)->sin_port)
 #endif
 
-static NetSock* socketTable[UIP_CONF_MAX_CONNECTIONS + UIP_CONF_UDP_CONNS];
+#define SOCK_TABSIZE (UIP_CONF_MAX_CONNECTIONS + UIP_CONF_UDP_CONNS + UIP_CONF_MAX_LISTENPORTS)
+static NetSock* socketTable[SOCK_TABSIZE];
 POSMUTEX_t socketTableMutex;
 
 void netInitBSDSockets()
@@ -76,11 +77,11 @@ int net_socket(int domain, int type, int protocol)
   posMutexLock(socketTableMutex);
 
   // Find free socket descriptor
-  for (i = 0; i < UIP_CONF_MAX_CONNECTIONS + UIP_CONF_UDP_CONNS; i++)
+  for (i = 0; i < SOCK_TABSIZE; i++)
     if (socketTable[i] == SOCKET_FREE)
       break;
 
-  if (i >= UIP_CONF_MAX_CONNECTIONS + UIP_CONF_UDP_CONNS) {
+  if (i >= SOCK_TABSIZE) {
 
     posMutexUnlock(socketTableMutex);
     return -1; // No free sockets
@@ -157,11 +158,11 @@ int net_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
   posMutexLock(socketTableMutex);
 
   // Find free socket descriptor
-  for (i = 0; i < UIP_CONF_MAX_CONNECTIONS + UIP_CONF_UDP_CONNS; i++)
+  for (i = 0; i < SOCK_TABSIZE; i++)
     if (socketTable[i] == SOCKET_FREE)
       break;
 
-  if (i >= UIP_CONF_MAX_CONNECTIONS + UIP_CONF_UDP_CONNS) {
+  if (i >= SOCK_TABSIZE) {
 
     posMutexUnlock(socketTableMutex);
     netSockClose(sock);
