@@ -33,8 +33,12 @@
 #include <string.h>
 #include <net/uip-split.h>
 
-#ifndef POSCFG_NET_STACK_SIZE
-#define POSCFG_NET_STACK_SIZE 500
+#ifndef NETCFG_STACK_SIZE
+#define NETCFG_STACK_SIZE 500
+#endif
+
+#ifndef NETCFG_TASK_PRIORITY
+#define NETCFG_TASK_PRIORITY 3
 #endif
 
 #if UIP_CONF_IPV6
@@ -677,7 +681,7 @@ void netInit()
   uip_arp_init();
 #endif
 
-  t = posTaskCreate(netMainThread, NULL, 10, POSCFG_NET_STACK_SIZE);
+  t = posTaskCreate(netMainThread, NULL, NETCFG_TASK_PRIORITY, NETCFG_STACK_SIZE);
   P_ASSERT("netInit2", t != NULL);
   POS_SETTASKNAME(t, "uip:main");
 }
