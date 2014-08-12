@@ -391,10 +391,10 @@ void netTcpAppcall()
         bool timeout = false;
  
         posMutexLock(listenSock->mutex);
-        while (listenSock->state != NET_SOCK_ACCEPTING) {
+        while (listenSock->state != NET_SOCK_ACCEPTING && !timeout) {
  
           posMutexUnlock(listenSock->mutex);
-          timeout = posFlagWait(listenSock->sockChange, MS(500)) == 0;
+          timeout = posFlagWait(listenSock->sockChange, MS(200)) == 0;
           posMutexLock(listenSock->mutex);
         }
 
