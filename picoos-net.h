@@ -171,19 +171,44 @@ void netEnableDevicePolling(UINT_t ticks);
 void netInit(void);
 
 /**
- * Initialize BSD socket layer (called automatically by netInit).
+ * Get socket table slot number for given socket. Used
+ * by BSD socket layer to convert socket pointer to 
+ * socket descriptor number.
  */
-void netInitBSDSockets(void);
+int netSockSlot(NetSock* sock);
 
 /**
- * Create new UDP socket.
+ * Get NetSock* pointer for given connection slot.
  */
-NetSock* netSockUdpCreate(uip_ipaddr_t* ip, int port);
+NetSock* netSockConnection(int slot);
+
+/**
+ * Allocate a new socket descriptor by searching
+ * for a free one in socket table.
+ */
+NetSock* netSockAlloc(NetSockState initialState);
+
+/**
+ * Free a new socket descriptor.
+ */
+void netSockFree(NetSock* sock);
+
+/**
+ * Create new UDP socket. This is the same as
+ * netSockUdpCreate() in previous versions.
+ */
+NetSock* netSockCreateUDP(uip_ipaddr_t* ip, int port);
 
 /**
  * Create a server socket, for listening incoming connections.
+ * This is same as netSockServerCreate in previous versions.
  */
-NetSock* netSockServerCreate(int port);
+NetSock* netSockCreateTCPServer(int port);
+
+/**
+ * Bind server socket to given port before listening on it.
+ */
+int netSockBind(NetSock* sock, int port);
 
 /**
  * Start listening for incoming connections.
@@ -200,11 +225,18 @@ NetSock* netSockAccept(NetSock* listenSocket, uip_ipaddr_t* peer);
 
 /**
  * Create new client connection to given IP address and port.
+ * This replaces netSockConnect call in previous library versions.
  */
-NetSock* netSockConnect(uip_ipaddr_t* ip, int port);
+NetSock* netSockCreateTCP(uip_ipaddr_t* ip, int port);
 
 #endif
 
+/**
+ * Connect socket (udp or tcp) to given IP and port.
+ * This works like BSD connect() now. To get functionality
+ * similar to previous library versions, use netSockCrateTCP().
+ */
+int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port);
 /**
  * Set **accept hook** function to handling incoming connections.
  * After accept hook is called by main loop it is responsible

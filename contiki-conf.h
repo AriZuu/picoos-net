@@ -72,6 +72,8 @@ typedef JIF_t clock_time_t;
 typedef enum {
 
   NET_SOCK_NULL,
+  NET_SOCK_UNDEF_TCP,
+  NET_SOCK_UNDEF_UDP,
   NET_SOCK_BUSY,
   NET_SOCK_READING,
   NET_SOCK_READING_LINE,
@@ -85,6 +87,7 @@ typedef enum {
   NET_SOCK_PEER_CLOSED,
   NET_SOCK_PEER_ABORTED,
   NET_SOCK_DESTROY,
+  NET_SOCK_BOUND,
   NET_SOCK_LISTENING,
   NET_SOCK_ACCEPTING,
   NET_SOCK_ACCEPTED
@@ -95,7 +98,7 @@ typedef enum {
 #define NET_SOCK_ABORT	 -1
 #define	NET_SOCK_TIMEOUT -2
 
-struct netSockState {
+struct netSock {
 
   POSFLAG_t sockChange;
   POSFLAG_t uipChange;
@@ -119,9 +122,15 @@ struct netSockState {
   };
 };
 
-typedef struct netSockState volatile NetSock;
-typedef NetSock uip_tcp_appstate_t;
-typedef NetSock uip_udp_appstate_t;
+typedef struct netSock volatile NetSock;
+
+struct netSockState {
+
+  NetSock* sock;
+};
+
+typedef struct netSockState uip_tcp_appstate_t;
+typedef struct netSockState uip_udp_appstate_t;
 typedef int (*NetSockAcceptHook)(NetSock* sock, int port);
 
 #define UIP_APPCALL netTcpAppcall

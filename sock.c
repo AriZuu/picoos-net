@@ -55,21 +55,157 @@ static volatile int dataToSend = 0;
 static NetSockAcceptHook acceptHook = NULL;
 static volatile UINT_t pollTicks;
 
-static NetSock listeningSockets[UIP_LISTENPORTS];
+#define SOCK_TABSIZE (UIP_CONF_MAX_CONNECTIONS + UIP_CONF_UDP_CONNS + UIP_LISTENPORTS)
+NetSock netSocketTable[SOCK_TABSIZE];
 
-static void netSockInit(NetSock* sock)
+int netSockSlot(NetSock* sock)
 {
-  sock->state = NET_SOCK_BUSY;
+  if (sock == NULL)
+    return -1;
+
+  return sock - netSocketTable;
+}
+
+NetSock* netSockConnection(int s)
+{
+  NetSock* sock;
+
+  sock = netSocketTable + s;
+  if (sock == NET_SOCK_NULL)
+    sock = NULL;
+
+  return sock;
+}
+
+NetSock* netSockAlloc(NetSockState initialState)
+{
+  int      i;
+  NetSock* sock;
+
+  // Ensure that this is the only task which manipulates socket table.
+  posMutexLock(uipMutex);
+
+  // Find free socket descriptor
+  sock = netSocketTable;
+  for (i = 0; i < SOCK_TABSIZE; i++, sock++)
+    if (sock->state == NET_SOCK_NULL)
+      break;
+
+  if (i >= SOCK_TABSIZE) {
+
+    posMutexUnlock(uipMutex);
+    return NULL; // No free sockets
+  }
+
+  sock->state = initialState;
   sock->mutex = posMutexCreate();
   sock->sockChange = posFlagCreate();
   sock->uipChange = posFlagCreate();
   sock->timeout = INFINITE;
+  sock->buf = NULL;
+  sock->len = 0;
+  sock->max = 0;
 
   P_ASSERT("netSockInit", sock->mutex != NULL && sock->sockChange != NULL && sock->uipChange != NULL);
 
   POS_SETEVENTNAME(sock->mutex, "sock:mutex");
   POS_SETEVENTNAME(sock->sockChange, "sock:api");
   POS_SETEVENTNAME(sock->uipChange, "sock:uip");
+
+  posMutexUnlock(uipMutex);
+  return sock;
+}
+
+#if UIP_ACTIVE_OPEN == 1
+NetSock* netSockCreateTCP(uip_ipaddr_t* ip, int port)
+{
+  NetSock* sock;
+
+  sock = netSockAlloc(NET_SOCK_UNDEF_TCP);
+  if (sock == NULL)
+    return NULL;
+
+  if (netSockConnect(sock, ip, port) == -1) {
+
+    netSockFree(sock);
+    return NULL;
+  }
+
+  return sock;
+}
+#endif
+
+#if UIP_CONF_UDP == 1
+NetSock* netSockCreateUDP(uip_ipaddr_t* ip, int port)
+{
+  NetSock* sock;
+
+  sock = netSockAlloc(NET_SOCK_UNDEF_UDP);
+  if (sock == NULL)
+    return NULL;
+
+  if (netSockConnect(sock, ip, port) == -1) {
+
+    netSockFree(sock);
+    return NULL;
+  }
+
+  return sock;
+}
+#endif
+
+int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
+{
+  struct uip_conn* tcp;
+  struct uip_udp_conn* udp;
+
+#if UIP_ACTIVE_OPEN == 1
+  P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_TCP || sock->state == NET_SOCK_UNDEF_UDP));
+#else
+  P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_UDP));
+#endif
+
+  posMutexLock(uipMutex);
+
+  if (sock->state == NET_SOCK_UNDEF_TCP)  {
+
+#if UIP_ACTIVE_OPEN == 1
+    tcp = uip_connect(ip, uip_htons(port));
+    tcp->appstate.sock = sock;
+
+    posMutexLock(sock->mutex);
+    sock->state = NET_SOCK_CONNECT;
+    posMutexUnlock(uipMutex);
+
+    while (sock->state == NET_SOCK_CONNECT) {
+
+      posMutexUnlock(sock->mutex);
+      posFlagGet(sock->uipChange, POSFLAG_MODE_GETMASK);
+      posMutexLock(sock->mutex);
+    }
+
+    if (sock->state == NET_SOCK_PEER_CLOSED || sock->state == NET_SOCK_PEER_ABORTED) {
+  
+      posMutexUnlock(sock->mutex);
+      netSockClose(sock);
+      return -1;
+    }
+
+    P_ASSERT("sockConnect", sock->state == NET_SOCK_CONNECT_OK);
+    sock->state = NET_SOCK_BUSY;
+#endif
+  }
+  else {
+
+#if UIP_CONF_UDP == 1
+    udp = uip_udp_new(ip, uip_htons(port));
+    udp->appstate.sock = sock;
+    sock->state = NET_SOCK_BUSY;
+#endif
+  }
+
+  posMutexUnlock(uipMutex);
+  return 0;
 }
 
 void netSockAcceptHookSet(NetSockAcceptHook hook)
@@ -77,48 +213,37 @@ void netSockAcceptHookSet(NetSockAcceptHook hook)
   acceptHook = hook;
 }
 
-NetSock* netSockUdpCreate(uip_ipaddr_t* ip, int port)
+NetSock* netSockCreateTCPServer(int port)
 {
-  struct uip_udp_conn* conn;
-
-  posMutexLock(uipMutex);
-  conn = uip_udp_new(ip, uip_htons(port));
-  netSockInit(&conn->appstate);
-  posMutexUnlock(uipMutex);
-
-  return &conn->appstate;
-}
-
-NetSock* netSockServerCreate(int port)
-{
-  int      i;
   NetSock* sock;
 
-  posMutexLock(uipMutex);
+  sock = netSockAlloc(NET_SOCK_UNDEF_TCP);
+  if (sock == NULL)
+    return NULL;
 
-  for (i = 0; i < UIP_LISTENPORTS; i++)
-    if (listeningSockets[i].port == 0)
-      break;
-
-  if (i >= UIP_LISTENPORTS) {
-
-    posMutexUnlock(uipMutex);
+  if (netSockBind(sock, port) == -1) {
+ 
+    netSockFree(sock);
     return NULL;
   }
- 
-  sock = listeningSockets + i;
-  netSockInit(sock);
-
-  sock->port = uip_htons(port);
-  sock->state = NET_SOCK_LISTENING;
-
-  posMutexUnlock(uipMutex);
 
   return sock;
 }
 
+int netSockBind(NetSock* sock, int port)
+{
+  sock->port = uip_htons(port);
+  sock->state = NET_SOCK_BOUND;
+
+  return 0;
+}
+
 void netSockListen(NetSock* sock)
 {
+  posMutexLock(sock->mutex);
+  sock->state = NET_SOCK_LISTENING;
+  posMutexUnlock(sock->mutex);
+
   posMutexLock(uipMutex);
   uip_listen(sock->port);
   posMutexUnlock(uipMutex);
@@ -145,7 +270,7 @@ NetSock* netSockAccept(NetSock* listenSock, uip_ipaddr_t* peer)
   P_ASSERT("sockAccept", listenSock->state == NET_SOCK_ACCEPTED);
 
   uip_ipaddr_copy(peer, &listenSock->newConnection->ripaddr);
-  sock = &listenSock->newConnection->appstate;
+  sock = listenSock->newConnection->appstate.sock;
   listenSock->newConnection = NULL;
   listenSock->state = NET_SOCK_LISTENING;
 
@@ -153,43 +278,6 @@ NetSock* netSockAccept(NetSock* listenSock, uip_ipaddr_t* peer)
 
   return sock;
 }
-
-#if UIP_ACTIVE_OPEN == 1
-NetSock* netSockConnect(uip_ipaddr_t* ip, int port)
-{
-  struct uip_conn* conn;
-  NetSock* sock;
-
-  posMutexLock(uipMutex);
-  conn = uip_connect(ip, uip_htons(port));
-  sock = &conn->appstate;
-
-  netSockInit(sock);
-  posMutexLock(sock->mutex);
-  sock->state = NET_SOCK_CONNECT;
-  posMutexUnlock(uipMutex);
-
-  while (sock->state == NET_SOCK_CONNECT) {
-
-    posMutexUnlock(sock->mutex);
-    posFlagGet(sock->uipChange, POSFLAG_MODE_GETMASK);
-    posMutexLock(sock->mutex);
-  }
-
-  if (sock->state == NET_SOCK_PEER_CLOSED || sock->state == NET_SOCK_PEER_ABORTED) {
-
-    posMutexUnlock(sock->mutex);
-    netSockClose(sock);
-    return NULL;
-  }
-
-  P_ASSERT("sockConnect", sock->state == NET_SOCK_CONNECT_OK);
-  sock->state = NET_SOCK_BUSY;
-  posMutexUnlock(sock->mutex);
-
-  return &conn->appstate;
-}
-#endif
 
 static int sockRead(NetSock* sock, NetSockState state, void* data, uint16_t max, uint16_t timeout)
 {
@@ -304,15 +392,16 @@ int netSockWrite(NetSock* sock, const void* data, uint16_t len)
   return len;
 }
 
-static void netSockDestroy(NetSock* sock)
+void netSockFree(NetSock* sock)
 {
   posMutexDestroy(sock->mutex);
   posFlagDestroy(sock->sockChange);
   posFlagDestroy(sock->uipChange);
-  sock->state = NET_SOCK_NULL;
   sock->mutex = NULL;
   sock->sockChange = NULL;
   sock->uipChange = NULL;
+
+  sock->state = NET_SOCK_NULL;
 }
 
 void netSockClose(NetSock* sock)
@@ -336,7 +425,10 @@ void netSockClose(NetSock* sock)
 
   if (sock->state == NET_SOCK_LISTENING) {
 
+    posMutexLock(uipMutex);
     uip_unlisten(sock->port);
+    posMutexUnlock(uipMutex);
+
     sock->port = 0;
     sock->state = NET_SOCK_CLOSE_OK;
   }
@@ -345,49 +437,58 @@ void netSockClose(NetSock* sock)
                           sock->state == NET_SOCK_PEER_ABORTED || 
                           sock->state == NET_SOCK_CLOSE_OK));
 
-  sock->state = NET_SOCK_DESTROY;
-  posFlagSet(sock->sockChange, 0);
-  posMutexUnlock(sock->mutex);
+  netSockFree(sock);
 }
 
 static void netTcpAppcallMutex(NetSock* sock);
 
 void netTcpAppcall()
 {
-  NetSock *sock;
-  sock = &uip_conn->appstate;
+  NetSock *sock = NULL;
 
   if (uip_connected()) {
     
-    if (sock->state == NET_SOCK_NULL) {
+    if (uip_conn->appstate.sock == NULL) {
 
       if (acceptHook != NULL) {
 
-        netSockInit(sock);
-        sock->buf = NULL;
-        sock->len = 0;
-        if ((*acceptHook)(sock, uip_ntohs(uip_conn->lport)) == -1) {
+        sock = netSockAlloc(NET_SOCK_BUSY);
+        if (sock == NULL) {
 
-          netSockDestroy(sock);
           uip_abort();
           return;
         }
+
+        uip_conn->appstate.sock = sock;
+
+        if ((*acceptHook)(sock, uip_ntohs(uip_conn->lport)) == -1) {
+
+          netSockFree(sock);
+          uip_conn->appstate.sock = NULL;
+          uip_abort();
+          return;
+        }
+
       }
       else {
 
         int i;
+        NetSock* listenSock;
 
-        for (i = 0; i < UIP_LISTENPORTS; i++)
-          if (listeningSockets[i].port == uip_conn->lport)
+        listenSock = netSocketTable;
+        for (i = 0; i < SOCK_TABSIZE; i++, listenSock++)
+          if ((listenSock->state == NET_SOCK_LISTENING ||
+              listenSock->state == NET_SOCK_ACCEPTING ||
+              listenSock->state == NET_SOCK_ACCEPTED) &&
+              listenSock->port == uip_conn->lport)
             break;
 
-        if (i >= UIP_LISTENPORTS) {
+        if (i >= SOCK_TABSIZE) {
 
           uip_abort();
           return;
         }
 
-        NetSock* listenSock = listeningSockets + i;
         bool timeout = false;
  
         posMutexLock(listenSock->mutex);
@@ -405,10 +506,15 @@ void netTcpAppcall()
           return;
         }
 
-        netSockInit(sock);
+        sock = netSockAlloc(NET_SOCK_BUSY);
+        if (sock == NULL) {
+      
+          uip_abort();
+          posMutexUnlock(listenSock->mutex);
+          return;
+        }
 
-        sock->buf = NULL;
-        sock->len = 0;
+        uip_conn->appstate.sock = sock;
         listenSock->newConnection = uip_conn;
         listenSock->state = NET_SOCK_ACCEPTED;
 
@@ -419,6 +525,8 @@ void netTcpAppcall()
 
     if (sock->state == NET_SOCK_CONNECT) {
 
+      sock = uip_conn->appstate.sock;
+
       posMutexLock(sock->mutex);
       sock->state = NET_SOCK_ACCEPTED;
       posFlagSet(sock->uipChange, 1);
@@ -426,10 +534,13 @@ void netTcpAppcall()
     }
   }
 
-  if (sock->mutex == NULL) {
+  sock = uip_conn->appstate.sock;
 
-    return;
-  }
+  // Check if connection is related to socket.
+  // If not, the socket has already been closed and
+  // there is nothing more to do.
+  if (sock == NULL)
+     return;
 
   posMutexLock(sock->mutex);
   netTcpAppcallMutex(sock);
@@ -439,17 +550,9 @@ void netTcpAppcall()
 
 static void netAppcallClose(NetSock* sock, NetSockState nextState)
 {
+  uip_conn->appstate.sock = NULL;
   sock->state = nextState;
   posFlagSet(sock->uipChange, 0);
-
-  while (sock->state != NET_SOCK_DESTROY) {
-
-    posMutexUnlock(sock->mutex);
-    posFlagGet(sock->sockChange, POSFLAG_MODE_GETMASK);
-    posMutexLock(sock->mutex);
-  }
-
-  netSockDestroy(sock);
 }
 
 static void netTcpAppcallMutex(NetSock* sock)
@@ -582,7 +685,7 @@ static void netUdpAppcallMutex(NetSock* sock);
 void netUdpAppcall()
 {
   NetSock *sock;
-  sock = &uip_udp_conn->appstate;
+  sock = uip_udp_conn->appstate.sock;
 
   if (sock->mutex == NULL) {
 
@@ -660,19 +763,15 @@ void netInit()
   etimer_init();
 
   dataToSend = 0;
+  memset((void*)netSocketTable, '\0', sizeof (netSocketTable));
 
-  memset((void*)listeningSockets, '\0', sizeof(listeningSockets));
   for(i = 0; i < UIP_CONNS; i++)
-    uip_conns[i].appstate.state = NET_SOCK_NULL;
+    uip_conns[i].appstate.sock = NULL;
 
 #if UIP_UDP
   for(i = 0; i < UIP_UDP_CONNS; i++)
-    uip_udp_conns[i].appstate.state = NET_SOCK_NULL;
+    uip_udp_conns[i].appstate.sock = NULL;
 #endif /* UIP_UDP */
-
-#if NETCFG_BSD_SOCKETS == 1
-  netInitBSDSockets();
-#endif
 
   netInterfaceInit();
   uip_init();

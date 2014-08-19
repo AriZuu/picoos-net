@@ -48,103 +48,38 @@
 #define SOCKADDR2PORT(sa) (((struct sockaddr_in*)sa)->sin_port)
 #endif
 
-#define SOCK_TABSIZE (UIP_CONF_MAX_CONNECTIONS + UIP_CONF_UDP_CONNS + UIP_CONF_MAX_LISTENPORTS)
-static NetSock* socketTable[SOCK_TABSIZE];
-POSMUTEX_t socketTableMutex;
-
-void netInitBSDSockets()
-{
-  memset(socketTable, '\0', sizeof (socketTable));
-  socketTableMutex = posMutexCreate();
-}
-
-NetSock* net_connection(int s)
+int net_socket(int domain, int type, int protocol)
 {
   NetSock* sock;
 
-  sock = socketTable[s];
-  if (sock == SOCKET_UNDEF_TCP || sock == SOCKET_UNDEF_UDP)
-    sock = NULL;
-
-  return sock;
-}
-
-int net_socket(int domain, int type, int protocol)
-{
-  int i;
-
-  // Ensure that this is the only task which manipulates socket table.
-  posMutexLock(socketTableMutex);
-
-  // Find free socket descriptor
-  for (i = 0; i < SOCK_TABSIZE; i++)
-    if (socketTable[i] == SOCKET_FREE)
-      break;
-
-  if (i >= SOCK_TABSIZE) {
-
-    posMutexUnlock(socketTableMutex);
-    return -1; // No free sockets
-  }
-
   if (type == SOCK_STREAM)
-    socketTable[i] = SOCKET_UNDEF_TCP;
+    sock = netSockAlloc(NET_SOCK_UNDEF_TCP);
   else if (type == SOCK_DGRAM)
-    socketTable[i] = SOCKET_UNDEF_UDP;
+    sock = netSockAlloc(NET_SOCK_UNDEF_UDP);
   else {
 
-    posMutexUnlock(socketTableMutex);
     return -1; // Bad socket type
   }
 
-  posMutexUnlock(socketTableMutex);
-  return i;
+  return netSockSlot(sock);
 }
 
 int net_close(int s)
 {
-  P_ASSERT("net_close", socketTable[s] != SOCKET_FREE);
-
-  if (socketTable[s] != SOCKET_UNDEF_TCP && socketTable[s] != SOCKET_UNDEF_UDP)
-    netSockClose(socketTable[s]);
-
-  posMutexLock(socketTableMutex);
-  socketTable[s] = NULL;
-  posMutexUnlock(socketTableMutex);
+  netSockClose(netSockConnection(s));
   return 0;
 }
 
 int net_connect(int s, const struct sockaddr *name, socklen_t namelen)
 {
-  NetSock* sock;
-
-  if (socketTable[s] == SOCKET_UNDEF_TCP) {
-
-    sock = netSockConnect(SOCKADDR2UIP(name), uip_ntohs(SOCKADDR2PORT(name)));
-  }
-  else if (socketTable[s] == SOCKET_UNDEF_UDP) {
-
-    sock = netSockUdpCreate(SOCKADDR2UIP(name), uip_ntohs(SOCKADDR2PORT(name)));
-  }
-  else
-    return -1;
-
-  if (sock == NULL)
-    return -1;
-
-  socketTable[s] = sock;
-  return 0;
+  return netSockConnect(netSockConnection(s), SOCKADDR2UIP(name), uip_ntohs(SOCKADDR2PORT(name)));
 }
 
 int net_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
-  NetSock* lsn = socketTable[s];
   NetSock* sock;
-  int i;
 
-  P_ASSERT("net_close", (lsn != SOCKET_FREE && lsn != SOCKET_UNDEF_TCP && lsn != SOCKET_UNDEF_UDP));
-
-  sock = netSockAccept(lsn, SOCKADDR2UIP(addr));
+  sock = netSockAccept(netSockConnection(s), SOCKADDR2UIP(addr));
   if (sock == NULL)
     return -1;
 
@@ -154,52 +89,17 @@ int net_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
   *addrlen = sizeof(struct sockaddr_in);
 #endif
 
-  // Ensure that this is the only task which manipulates socket table.
-  posMutexLock(socketTableMutex);
-
-  // Find free socket descriptor
-  for (i = 0; i < SOCK_TABSIZE; i++)
-    if (socketTable[i] == SOCKET_FREE)
-      break;
-
-  if (i >= SOCK_TABSIZE) {
-
-    posMutexUnlock(socketTableMutex);
-    netSockClose(sock);
-    return -1; // No free sockets
-  }
-
-  socketTable[i] = sock;
-  posMutexUnlock(socketTableMutex);
-
-  return i;
+  return netSockSlot(sock);
 }
 
 int net_bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
-  NetSock* sock;
-
-  if (socketTable[s] == SOCKET_UNDEF_TCP) {
-
-    sock = netSockServerCreate(uip_ntohs(SOCKADDR2PORT(name)));
-  }
-  else
-    return -1;
-
-  if (sock == NULL)
-    return -1;
-
-  socketTable[s] = sock;
-  return 0;
+  return netSockBind(netSockConnection(s), uip_ntohs(SOCKADDR2PORT(name)));
 }
 
 int net_listen(int s, int backlog)
 {
-  NetSock* sock = socketTable[s];
-
-  P_ASSERT("net_close", (sock != SOCKET_FREE && sock != SOCKET_UNDEF_TCP && sock != SOCKET_UNDEF_UDP));
-
-  netSockListen(sock);
+  netSockListen(netSockConnection(s));
   return 0;
 }
 
@@ -210,7 +110,7 @@ int net_getsockopt (int s, int level, int optname, void *optval, socklen_t *optl
 
 int net_setsockopt (int s, int level, int optname, const void *optval, socklen_t optlen)
 {
-  NetSock* sock = socketTable[s];
+  NetSock* sock = netSockConnection(s);
 
   P_ASSERT("net_close", (sock != SOCKET_FREE && sock != SOCKET_UNDEF_TCP && sock != SOCKET_UNDEF_UDP));
 
@@ -231,7 +131,7 @@ int net_setsockopt (int s, int level, int optname, const void *optval, socklen_t
 
 int net_recv(int s, void *dataptr, size_t size, int flags)
 {
-  NetSock* sock = socketTable[s];
+  NetSock* sock = netSockConnection(s);
   int len;
 
   P_ASSERT("net_close", (sock != SOCKET_FREE && sock != SOCKET_UNDEF_TCP && sock != SOCKET_UNDEF_UDP));
@@ -247,7 +147,7 @@ int net_recv(int s, void *dataptr, size_t size, int flags)
 
 int net_send(int s, const void *dataptr, size_t size, int flags)
 {
-  NetSock* sock = socketTable[s];
+  NetSock* sock = netSockConnection(s);
 
   P_ASSERT("net_close", (sock != SOCKET_FREE && sock != SOCKET_UNDEF_TCP && sock != SOCKET_UNDEF_UDP));
   if (netSockWrite(sock, dataptr, size) < (int)size)

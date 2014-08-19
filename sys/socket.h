@@ -175,7 +175,6 @@ int net_send(int s, const void *dataptr, size_t size, int flags);
 int net_socket(int domain, int type, int protocol);
 int net_read(int s, void *mem, size_t len);
 int net_write(int s, const void *dataptr, size_t size);
-NetSock* net_connection(int s);
 
 #if NETCFG_COMPAT_SOCKETS
 #define accept(a,b,c)         net_accept(a,b,c)
