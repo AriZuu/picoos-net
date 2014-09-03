@@ -38,6 +38,7 @@ struct uip_eth_addr uip_ethaddr = {{0,0,0,0,0,0}};
 
 #if NETCFG_DRIVER_CS8900A == 2 || \
     NETCFG_DRIVER_ENC28J60 == 2 || \
+    NETCFG_DRIVER_HDLC_BRIDGE == 2 || \
     NETCFG_DRIVER_TAP == 2
 
 #if UIP_CONF_IPV6
@@ -151,6 +152,34 @@ bool netInterfacePoll(void)
 void netInterfaceXmit(void)
 {
   tapSend();
+}
+
+#endif
+
+#if NETCFG_DRIVER_HDLC_BRIDGE == 2
+
+#include "drivers/stm32_hdlc_bridge.h"
+
+void netInterfaceInit(void)
+{
+  hdlcInit();
+}
+
+bool netInterfacePoll(void)
+{
+  uip_len = hdlcPoll();
+  if (uip_len) {
+
+    netEthernetInput();
+    return true;
+  }
+
+  return false;
+}
+
+void netInterfaceXmit(void)
+{
+  hdlcSend();
 }
 
 #endif
