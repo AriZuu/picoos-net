@@ -69,6 +69,8 @@ void telnetInit(NetTelnet* state, int sock)
   setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
   state->inLen = recv(sock, state->inBuf, sizeof(state->inBuf), 0);
   state->sock = sock;
+  if (state->inLen < 0)
+    state->inLen = 0;
 }
 
 void telnetWrite(NetTelnet* conn, char* data)
@@ -229,6 +231,8 @@ int telnetReadLine(NetTelnet* conn, char* data, int max, int timeout)
 
         *data++ = c;
         ++len;
+        if (c == '\n')
+          gotLine = true;
       }
       break;
     }
