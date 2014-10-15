@@ -160,9 +160,10 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
   struct uip_udp_conn* udp;
 
 #if UIP_ACTIVE_OPEN == 1
-  P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_TCP || sock->state == NET_SOCK_UNDEF_UDP));
+  P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_TCP || sock->state == NET_SOCK_UNDEF_UDP ||
+                           sock->state == NET_SOCK_BOUND || sock->state == NET_SOCK_BOUND_UDP));
 #else
-  P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_UDP));
+  P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_UDP || NET_SOCK_BOUND_UDP));
 #endif
 
   posMutexLock(uipMutex);
@@ -200,6 +201,9 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
 #if UIP_CONF_UDP == 1
     udp = uip_udp_new(ip, uip_htons(port));
     udp->appstate.sock = sock;
+    if (sock->state == NET_SOCK_BOUND_UDP)
+      uip_udp_bind(udp, sock->port);
+
     sock->state = NET_SOCK_BUSY;
 #endif
   }
@@ -232,8 +236,14 @@ NetSock* netSockCreateTCPServer(int port)
 
 int netSockBind(NetSock* sock, int port)
 {
+#if UIP_ACTIVE_OPEN == 1
+  P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_TCP || sock->state == NET_SOCK_UNDEF_UDP));
+#else
+  P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_UDP));
+#endif
+
   sock->port = uip_htons(port);
-  sock->state = NET_SOCK_BOUND;
+  sock->state = sock->state == NET_SOCK_UNDEF_TCP ? NET_SOCK_BOUND : NET_SOCK_BOUND_UDP;
 
   return 0;
 }
