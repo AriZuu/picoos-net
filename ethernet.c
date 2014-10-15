@@ -39,6 +39,7 @@ struct uip_eth_addr uip_ethaddr = {{0,0,0,0,0,0}};
 #if NETCFG_DRIVER_CS8900A == 2 || \
     NETCFG_DRIVER_ENC28J60 == 2 || \
     NETCFG_DRIVER_HDLC_BRIDGE == 2 || \
+    NETCFG_DRIVER_TM4C1294 == 2 || \
     NETCFG_DRIVER_TAP == 2
 
 #if UIP_CONF_IPV6
@@ -180,6 +181,32 @@ bool netInterfacePoll(void)
 void netInterfaceXmit(void)
 {
   hdlcSend();
+}
+
+#endif
+
+#if NETCFG_DRIVER_TM4C1294 == 2
+
+void netInterfaceInit(void)
+{
+  tivaEmacInit();
+}
+
+bool netInterfacePoll(void)
+{
+  uip_len = tivaEmacPoll(uip_buf, UIP_BUFSIZE);
+  if (uip_len) {
+
+    netEthernetInput();
+    return true;
+  }
+
+  return false;
+}
+
+void netInterfaceXmit(void)
+{
+  tivaEmacSend(uip_buf, uip_len);
 }
 
 #endif
