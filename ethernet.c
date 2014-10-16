@@ -187,6 +187,8 @@ void netInterfaceXmit(void)
 
 #if NETCFG_DRIVER_TM4C1294 == 2
 
+#include "drivers/tm4c_emac.h"
+
 void netInterfaceInit(void)
 {
   tivaEmacInit();
