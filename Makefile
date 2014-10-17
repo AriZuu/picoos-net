@@ -69,8 +69,8 @@ SRC_TXT =	sock.c \
 SRC_HDR =	
 SRC_OBJ =
 CDEFINES += $(BSP_DEFINES) _XOPEN_SOURCE=700
-DIR_USRINC +=   ../picoos-micro  \
-		uip/apps/telnetd
+
+MODULES = ../picoos-micro
 
 include drivers/Makefile
 
