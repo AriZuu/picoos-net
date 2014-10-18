@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, Swedish Institute of Computer Science
+ * Copyright (c) 2014, Ari Suutari <ari@stonepile.fi>.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,19 +26,14 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * This file is part of the Contiki operating system.
- *
  */
-#ifndef __DHCPC_H__
-#define __DHCPC_H__
+#ifndef DHCPC_H_
+#define DHCPC_H_
 
 struct dhcpc_state {
-  struct pt pt;
+  POSTASK_t task;
   char state;
-  struct uip_udp_conn *conn;
-  struct etimer etimer;
-  uint32_t ticks;
+  NetSock* conn;
   const void *mac_addr;
   int mac_len;
   
@@ -53,10 +49,8 @@ struct dhcpc_state {
 void dhcpc_init(const void *mac_addr, int mac_len);
 void dhcpc_request(void);
 
-void dhcpc_appcall(process_event_t ev, void *data);
-
 /* Mandatory callbacks provided by the user. */
 void dhcpc_configured(const struct dhcpc_state *s);
 void dhcpc_unconfigured(const struct dhcpc_state *s);
 
-#endif /* __DHCPC_H__ */
+#endif /* DHCPC_H_ */

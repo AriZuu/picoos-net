@@ -65,6 +65,7 @@ SRC_TXT =	sock.c \
 		net/rime/rimeaddr.c \
 		net/uip-nd6.c \
 		net/uiplib.c \
+		net/dhcpc.c
 
 SRC_HDR =	
 SRC_OBJ =

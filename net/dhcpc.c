@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2005, Swedish Institute of Computer Science
+ * Copyright (c) 2014, Ari Suutari <ari@stonepile.fi>.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,16 +26,11 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
- *
- * This file is part of the Contiki operating system.
- *
  */
 
-#include <stdio.h>
+#include <picoos.h>
+#include <picoos-net.h>
 #include <string.h>
-
-#include "contiki.h"
-#include "contiki-net.h"
 #include "net/dhcpc.h"
 
 #define STATE_INITIAL         0
@@ -138,7 +134,7 @@ add_end(uint8_t *optptr)
 }
 /*---------------------------------------------------------------------------*/
 static void
-create_msg(CC_REGISTER_ARG struct dhcp_msg *m)
+create_msg(struct dhcp_msg *m)
 {
   m->op = DHCP_REQUEST;
   m->htype = DHCP_HTYPE_ETHERNET;
@@ -162,11 +158,14 @@ create_msg(CC_REGISTER_ARG struct dhcp_msg *m)
   memcpy(m->options, magic_cookie, sizeof(magic_cookie));
 }
 /*---------------------------------------------------------------------------*/
+
+static struct dhcp_msg dhcp_msg_buf;
+
 static void
 send_discover(void)
 {
   uint8_t *end;
-  struct dhcp_msg *m = (struct dhcp_msg *)uip_appdata;
+  struct dhcp_msg *m = (struct dhcp_msg *)&dhcp_msg_buf;
 
   create_msg(m);
 
@@ -174,14 +173,14 @@ send_discover(void)
   end = add_req_options(end);
   end = add_end(end);
 
-  uip_send(uip_appdata, (int)(end - (uint8_t *)uip_appdata));
+  netSockWrite(s.conn, (void*)m, end - (uint8_t*)m);
 }
 /*---------------------------------------------------------------------------*/
 static void
 send_request(void)
 {
   uint8_t *end;
-  struct dhcp_msg *m = (struct dhcp_msg *)uip_appdata;
+  struct dhcp_msg *m = (struct dhcp_msg *)&dhcp_msg_buf;
 
   create_msg(m);
   
@@ -190,7 +189,7 @@ send_request(void)
   end = add_req_ipaddr(end);
   end = add_end(end);
   
-  uip_send(uip_appdata, (int)(end - (uint8_t *)uip_appdata));
+  netSockWrite(s.conn, (void*)m, end - (uint8_t*)m);
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
@@ -229,15 +228,15 @@ parse_options(uint8_t *optptr, int len)
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t
-parse_msg(void)
+parse_msg(int len)
 {
-  struct dhcp_msg *m = (struct dhcp_msg *)uip_appdata;
+  struct dhcp_msg *m = (struct dhcp_msg *)&dhcp_msg_buf;
   
   if(m->op == DHCP_REPLY &&
      memcmp(m->xid, &xid, sizeof(xid)) == 0 &&
      memcmp(m->chaddr, s.mac_addr, s.mac_len) == 0) {
     memcpy(s.ipaddr.u16, m->yiaddr, 4);
-    return parse_options(&m->options[4], uip_datalen());
+    return parse_options(&m->options[4], len);
   }
   return 0;
 }
@@ -246,12 +245,12 @@ parse_msg(void)
  * Is this a "fresh" reply for me? If it is, return the type.
  */
 static int
-msg_for_me(void)
+msg_for_me(int len)
 {
-  struct dhcp_msg *m = (struct dhcp_msg *)uip_appdata;
+  struct dhcp_msg *m = (struct dhcp_msg *)&dhcp_msg_buf;
   uint8_t *optptr = &m->options[4];
-  uint8_t *end = (uint8_t*)uip_appdata + uip_datalen();
-  
+  uint8_t *end = (uint8_t*)&dhcp_msg_buf + len;
+
   if(m->op == DHCP_REPLY &&
      memcmp(m->xid, &xid, sizeof(xid)) == 0 &&
      memcmp(m->chaddr, s.mac_addr, s.mac_len) == 0) {
@@ -266,156 +265,166 @@ msg_for_me(void)
   }
   return -1;
 }
-/*---------------------------------------------------------------------------*/
-static
-PT_THREAD(handle_dhcp(process_event_t ev, void *data))
-{
-  clock_time_t ticks;
 
-  PT_BEGIN(&s.pt);
+static int readResponse(int type, int timeoutSecs)
+{
+  int   len;
+  JIF_t end;
+  int wait;
+
+  wait = timeoutSecs * HZ;
+  end = jiffies + wait;
   
+  do {
+
+    if ((len = netSockRead(s.conn, &dhcp_msg_buf, sizeof(dhcp_msg_buf), wait)) > 0) {
+
+      if(msg_for_me(len) == type) {
+
+        parse_msg(len);
+        return len;
+      }
+    }
+
+    wait = end - jiffies;
+    
+  } while (wait > 0);
+ 
+  return -1;
+}
+
+/*---------------------------------------------------------------------------*/
+
+static void dhcpTask(void* arg)
+{
+  int wait;
+
  init:
   xid++;
   s.state = STATE_SENDING;
-  s.ticks = CLOCK_SECOND;
-  while (1) {
-    while(ev != tcpip_event) {
-      tcpip_poll_udp(s.conn);
-      PT_YIELD(&s.pt);
-    }
-    send_discover();
-    etimer_set(&s.etimer, s.ticks);
-    do {
-      PT_YIELD(&s.pt);
-      if(ev == tcpip_event && uip_newdata() && msg_for_me() == DHCPOFFER) {
-	parse_msg();
-	s.state = STATE_OFFER_RECEIVED;
-	goto selecting;
-      }
-    } while (!etimer_expired(&s.etimer));
+  wait = 1;
 
-    if(s.ticks < CLOCK_SECOND * 60) {
-      s.ticks *= 2;
+  while (1) {
+
+    send_discover();
+
+    if (readResponse(DHCPOFFER, wait) != -1) {
+
+      s.state = STATE_OFFER_RECEIVED;
+      goto selecting;
     }
+
+    if(wait < 60)
+      wait = wait * 2;
   }
   
  selecting:
   xid++;
-  s.ticks = CLOCK_SECOND;
-  do {
-    while(ev != tcpip_event) {
-      tcpip_poll_udp(s.conn);
-      PT_YIELD(&s.pt);
-    }
-    send_request();
-    etimer_set(&s.etimer, s.ticks);
-    do {
-      PT_YIELD(&s.pt);
-      if(ev == tcpip_event && uip_newdata() && msg_for_me() == DHCPACK) {
-	parse_msg();
-	s.state = STATE_CONFIG_RECEIVED;
-	goto bound;
-      }
-    } while (!etimer_expired(&s.etimer));
+  wait = 1;
 
-    if(s.ticks <= CLOCK_SECOND * 10) {
-      s.ticks += CLOCK_SECOND;
-    } else {
+  do {
+
+    send_request();
+
+    if (readResponse(DHCPACK, wait) != -1) {
+
+      s.state = STATE_CONFIG_RECEIVED;
+      goto bound;
+    }
+
+    if(wait < 10) {
+
+      wait++;
+    }
+    else {
+
       goto init;
     }
+
   } while(s.state != STATE_CONFIG_RECEIVED);
   
  bound:
-#if 0
-  printf("Got IP address %d.%d.%d.%d\n", uip_ipaddr_to_quad(&s.ipaddr));
-  printf("Got netmask %d.%d.%d.%d\n",	 uip_ipaddr_to_quad(&s.netmask));
-  printf("Got DNS server %d.%d.%d.%d\n", uip_ipaddr_to_quad(&s.dnsaddr));
-  printf("Got default router %d.%d.%d.%d\n",
+#if 1
+  nosPrintf("Got IP address %d.%d.%d.%d\n", uip_ipaddr_to_quad(&s.ipaddr));
+  nosPrintf("Got netmask %d.%d.%d.%d\n",	 uip_ipaddr_to_quad(&s.netmask));
+  nosPrintf("Got DNS server %d.%d.%d.%d\n", uip_ipaddr_to_quad(&s.dnsaddr));
+  nosPrintf("Got default router %d.%d.%d.%d\n",
 	 uip_ipaddr_to_quad(&s.default_router));
-  printf("Lease expires in %ld seconds\n",
+  nosPrintf("Lease expires in %ld seconds\n",
 	 uip_ntohs(s.lease_time[0])*65536ul + uip_ntohs(s.lease_time[1]));
 #endif
 
   dhcpc_configured(&s);
-  
-#define MAX_TICKS (~((clock_time_t)0) / 2)
-#define MAX_TICKS32 (~((uint32_t)0))
-#define IMIN(a, b) ((a) < (b) ? (a) : (b))
 
-  if((uip_ntohs(s.lease_time[0])*65536ul + uip_ntohs(s.lease_time[1]))*CLOCK_SECOND/2
-     <= MAX_TICKS32) {
-    s.ticks = (uip_ntohs(s.lease_time[0])*65536ul + uip_ntohs(s.lease_time[1])
-	       )*CLOCK_SECOND/2;
-  } else {
-    s.ticks = MAX_TICKS32;
+  uint32_t leaseLeft = uip_ntohs(s.lease_time[0])*65536ul + uip_ntohs(s.lease_time[1]);
+  uint32_t sleepLeft = leaseLeft / 2;
+
+#define MAX_SECS ((INFINITE - 1) / HZ)
+
+  while (sleepLeft > 0) {
+
+    if (sleepLeft > MAX_SECS) {
+
+      wait = MAX_SECS * HZ;
+      sleepLeft -= MAX_SECS;
+    }
+    else {
+
+      wait = sleepLeft * HZ;
+      sleepLeft = 0;
+    }
+
+    posTaskSleep(wait);
   }
 
-  while(s.ticks > 0) {
-    ticks = IMIN(s.ticks, MAX_TICKS);
-    s.ticks -= ticks;
-    etimer_set(&s.etimer, ticks);
-    PT_YIELD_UNTIL(&s.pt, etimer_expired(&s.etimer));
-  }
-
-  if((uip_ntohs(s.lease_time[0])*65536ul + uip_ntohs(s.lease_time[1]))*CLOCK_SECOND/2
-     <= MAX_TICKS32) {
-    s.ticks = (uip_ntohs(s.lease_time[0])*65536ul + uip_ntohs(s.lease_time[1])
-	       )*CLOCK_SECOND/2;
-  } else {
-    s.ticks = MAX_TICKS32;
-  }
+  leaseLeft = leaseLeft / 2;
 
   /* renewing: */
   xid++;
   do {
-    while(ev != tcpip_event) {
-      tcpip_poll_udp(s.conn);
-      PT_YIELD(&s.pt);
-    }
+
     send_request();
-    ticks = IMIN(s.ticks / 2, MAX_TICKS);
-    s.ticks -= ticks;
-    etimer_set(&s.etimer, ticks);
-    do {
-      PT_YIELD(&s.pt);
-      if(ev == tcpip_event && uip_newdata() && msg_for_me() == DHCPACK) {
-	parse_msg();
-	goto bound;
-      }
-    } while(!etimer_expired(&s.etimer));
-  } while(s.ticks >= CLOCK_SECOND*3);
+
+    if (leaseLeft / 2 > MAX_SECS)
+      wait = MAX_SECS;
+    else
+      wait = (leaseLeft / 2);
+
+    if (readResponse(DHCPACK, wait) != -1) {
+
+      s.state = STATE_CONFIG_RECEIVED;
+      goto bound;
+    }
+
+    leaseLeft -= wait;
+
+  } while (leaseLeft > 3);
 
   /* rebinding: */
 
   /* lease_expired: */
   dhcpc_unconfigured(&s);
   goto init;
-
-  PT_END(&s.pt);
 }
+
 /*---------------------------------------------------------------------------*/
 void
 dhcpc_init(const void *mac_addr, int mac_len)
 {
-  uip_ipaddr_t addr;
-  
+  uip_ipaddr_t ipaddr;
+
   s.mac_addr = mac_addr;
   s.mac_len  = mac_len;
 
   s.state = STATE_INITIAL;
-  uip_ipaddr(&addr, 255,255,255,255);
-  s.conn = udp_new(&addr, UIP_HTONS(DHCPC_SERVER_PORT), NULL);
-  if(s.conn != NULL) {
-    udp_bind(s.conn, UIP_HTONS(DHCPC_CLIENT_PORT));
-  }
-  PT_INIT(&s.pt);
-}
-/*---------------------------------------------------------------------------*/
-void
-dhcpc_appcall(process_event_t ev, void *data)
-{
-  if(ev == tcpip_event || ev == PROCESS_EVENT_TIMER) {
-    handle_dhcp(ev, data);
+
+  s.conn = netSockAlloc(NET_SOCK_UNDEF_UDP);
+  if (s.conn != NULL) {
+
+    netSockBind(s.conn, DHCPC_CLIENT_PORT);
+
+    uip_ipaddr(&ipaddr, 255, 255, 255, 255);
+    netSockConnect(s.conn, &ipaddr, DHCPC_SERVER_PORT);
   }
 }
 /*---------------------------------------------------------------------------*/
@@ -427,7 +436,10 @@ dhcpc_request(void)
   if(s.state == STATE_INITIAL) {
     uip_ipaddr(&ipaddr, 0,0,0,0);
     uip_sethostaddr(&ipaddr);
-    handle_dhcp(PROCESS_EVENT_NONE, NULL);
+    s.task = posTaskCreate(dhcpTask, NULL, 1, 1000);
+    POS_SETTASKNAME(s.task, "uip:dhcpc");
+
   }
 }
 /*---------------------------------------------------------------------------*/
+
