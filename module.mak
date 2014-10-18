@@ -1,1 +1,1 @@
-DIR_MODINC += /tmp $(MOD)
+DIR_MODINC += $(MOD) $(MOD)/drivers
