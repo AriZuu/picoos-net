@@ -33,6 +33,10 @@
 #include <string.h>
 #include "net/dhcpc.h"
 
+#if !UIP_BROADCAST
+#error UIP_CONF_BROADCAST must be set to 1
+#endif
+
 #define STATE_INITIAL         0
 #define STATE_SENDING         1
 #define STATE_OFFER_RECEIVED  2
