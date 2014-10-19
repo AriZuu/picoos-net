@@ -348,7 +348,7 @@ static void dhcpTask(void* arg)
   } while(s.state != STATE_CONFIG_RECEIVED);
   
  bound:
-#if 1
+#if 0
   nosPrintf("Got IP address %d.%d.%d.%d\n", uip_ipaddr_to_quad(&s.ipaddr));
   nosPrintf("Got netmask %d.%d.%d.%d\n",	 uip_ipaddr_to_quad(&s.netmask));
   nosPrintf("Got DNS server %d.%d.%d.%d\n", uip_ipaddr_to_quad(&s.dnsaddr));
