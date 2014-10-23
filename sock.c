@@ -172,6 +172,12 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
 
 #if UIP_ACTIVE_OPEN == 1
     tcp = uip_connect(ip, uip_htons(port));
+    if (tcp == NULL) {
+
+      posMutexUnlock(sock->mutex);
+      return -1;
+    }
+
     tcp->appstate.sock = sock;
 
     posMutexLock(sock->mutex);
@@ -200,6 +206,12 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
 
 #if UIP_CONF_UDP == 1
     udp = uip_udp_new(ip, uip_htons(port));
+    if (udp == NULL) {
+
+      posMutexUnlock(sock->mutex);
+      return -1;
+    }
+
     udp->appstate.sock = sock;
     if (sock->state == NET_SOCK_BOUND_UDP)
       uip_udp_bind(udp, sock->port);
