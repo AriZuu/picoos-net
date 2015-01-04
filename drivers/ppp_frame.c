@@ -279,7 +279,13 @@ void pppInputAppend(PPPContext* ctx, uint8_t ch)
         }
       }
     }
-          
+    else {
+
+      ctx->stat.tooShort++;
+      pppInputReset(ctx);
+      return;
+    }
+    
     ctx->inputHook(protocol, packet, len);
 
     pppInputReset(ctx);
