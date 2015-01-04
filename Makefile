@@ -34,40 +34,66 @@
 RELROOT = ../picoos/
 PORT ?= lpc2xxx
 BUILD ?= RELEASE
+AUTO_COPY_CONTIKI_SRC ?= N
 
 include $(RELROOT)make/common.mak
 
 TARGET = picoos-net
-SRC_TXT =	sock.c \
-		bsdsock.c \
-		telnetd.c \
-		tcpip-glue.c \
-		ethernet.c \
-		lib/random.c	\
-		lib/list.c	\
-		lib/memb.c	\
-		sys/stimer.c	\
-		sys/timer.c	\
-		sys/etimer.c	\
-		sys/ctimer.c	\
-		sys/clock.c	\
-		net/uip.c	\
-		net/uip-split.c \
-		net/uip_arp.c \
-		net/uip-debug.c \
-		net/tcpip.c \
-		net/uip6.c \
-		net/uip-icmp6.c \
-		net/uip-ds6.c \
-		net/uip-ds6-route.c \
-		net/uip-ds6-nbr.c \
-		net/nbr-table.c \
-		net/rime/rimeaddr.c \
-		net/uip-nd6.c \
-		net/uiplib.c \
-		net/dhcpc.c
 
-SRC_HDR =	
+CONTIKI_DIR = ../contiki-uip
+
+SRC_TXT_CONTIKI =	net/uip.c	\
+			net/uip-split.c \
+			net/uip_arp.c   \
+			net/uip-debug.c \
+			net/tcpip.c     \
+			net/uip6.c      \
+			net/uip-icmp6.c \
+			net/uip-ds6.c   \
+			net/uip-ds6-route.c \
+			net/uip-ds6-nbr.c   \
+			net/nbr-table.c     \
+			net/rime/rimeaddr.c \
+			net/uip-nd6.c       \
+			net/uiplib.c    \
+			lib/random.c	\
+		        lib/list.c	\
+		        lib/memb.c	\
+
+SRC_HDR_CONTIKI     =   net/nbr-table.h		\
+			net/rime/rimeaddr.h	\
+			net/tcpip.h		\
+			net/uip-debug.h		\
+			net/uip-ds6-nbr.h	\
+			net/uip-ds6-route.h	\
+			net/uip-ds6.h		\
+			net/uip-fw.h		\
+			net/uip-icmp6.h		\
+			net/uip-nd6.h		\
+			net/uip-split.h		\
+			net/uip.h		\
+			net/uip_arch.h		\
+			net/uip_arp.h		\
+			net/uiplib.h		\
+			net/uipopt.h		\
+		 	lib/list.h		\
+			lib/memb.h		\
+			lib/random.h
+
+SRC_TXT =		sock.c \
+			bsdsock.c \
+			telnetd.c \
+			tcpip-glue.c \
+			ethernet.c \
+			sys/stimer.c	\
+			sys/timer.c	\
+			sys/etimer.c	\
+			sys/ctimer.c	\
+			sys/clock.c	\
+			net/dhcpc.c	\
+			$(SRC_TXT_CONTIKI)
+
+SRC_HDR = $(SRC_HDR_CONTIKI) in.h in6.h picoos-net.h
 SRC_OBJ =
 CDEFINES += $(BSP_DEFINES) _XOPEN_SOURCE=700
 
@@ -79,15 +105,17 @@ ifeq '$(strip $(DIR_OUTPUT))' ''
 DIR_OUTPUT = $(CURRENTDIR)/bin
 endif
 
+ifeq '$(AUTO_COPY_CONTIKI_SRC)' 'Y'
+
+$(SRC_TXT_CONTIKI): %.c:	$(CONTIKI_DIR)/core/%.c
+	cp $< $@
+
+$(SRC_HDR_CONTIKI): %.h:	$(CONTIKI_DIR)/core/%.h
+	cp $< $@
+
+endif
 
 include $(MAKE_LIB)
-
-#
-# Distribution zip.
-#
-dist:
-	rm -f ../dist/picoos-net-`date +%Y%m%d`.zip
-	cd ..; zip -qr dist/picoos-net-`date +%Y%m%d`.zip picoos-net -x "*/.*" "*/bin/*"
 
 changelog:
 	git log --date=short --format="%ad %ae %s" --date-order --follow .
