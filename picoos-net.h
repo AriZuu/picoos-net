@@ -113,7 +113,7 @@ void netInterfaceInit(void);
  * Before transmitting packet ARP processing is done
  * if needed by device driver (ethernet).
  */
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 void netInterfaceOutput(uip_lladdr_t* lla);
 #else
 void netInterfaceOutput(void);
@@ -133,7 +133,7 @@ void netEthernetInput(void);
  * xmit function. Called by netIntefaceOutput
  * for ethernet-type devices.
  */
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 void netEthernetOutput(uip_lladdr_t* lla);
 #else
 void netEthernetOutput(void);

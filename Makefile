@@ -96,11 +96,13 @@ SRC_TXT =		sock.c \
 			$(SRC_TXT_CONTIKI)
 
 ifeq '$(strip $(NETCFG_STACK))' '6'
+CDEFINES += NETSTACK_CONF_WITH_IPV4=0
 CDEFINES += NETSTACK_CONF_WITH_IPV6=1
 SRC_TXT += $(SRC_TXT_CONTIKI6)
 else
 ifeq '$(strip $(NETCFG_STACK))' '4'
 CDEFINES += NETSTACK_CONF_WITH_IPV4=1
+CDEFINES += NETSTACK_CONF_WITH_IPV6=0
 SRC_TXT += $(SRC_TXT_CONTIKI4)
 else
 $(error Network stack must be selected by setting NETCFG_STACK to 4 or 6)

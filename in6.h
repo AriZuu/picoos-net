@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 
 struct in6_addr {
   union {
