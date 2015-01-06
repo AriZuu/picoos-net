@@ -32,7 +32,7 @@
 #include <picoos-net.h>
 #include <string.h>
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 struct uip_eth_addr uip_ethaddr = {{0,0,0,0,0,0}};
 #endif
 
@@ -42,7 +42,7 @@ struct uip_eth_addr uip_ethaddr = {{0,0,0,0,0,0}};
     NETCFG_DRIVER_TM4C1294 == 2 || \
     NETCFG_DRIVER_TAP == 2
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 void netInterfaceOutput(uip_lladdr_t* lla)
 {
   netEthernetOutput(lla);
@@ -218,7 +218,7 @@ void netInterfaceXmit(void)
 
 void netEthernetInput()
 {
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 
   if(BUF->type == uip_htons(UIP_ETHTYPE_IPV6)) {
 
@@ -248,7 +248,7 @@ void netEthernetInput()
 #endif
 }
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 void netEthernetOutput(uip_lladdr_t* lladdr)
 {
   /*

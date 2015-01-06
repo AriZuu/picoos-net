@@ -93,7 +93,7 @@ void tapInit()
 {
   struct sigaction sig;
   int flags;
-#if !UIP_CONF_IPV6
+#if !NETSTACK_CONF_WITH_IPV6
   uip_ipaddr_t ip;
 #endif
   char ifconfig[80];
@@ -101,7 +101,7 @@ void tapInit()
   tap = open("/dev/tap0", O_RDWR);
   P_ASSERT("tap0", tap != -1);
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
   sprintf (ifconfig, "ifconfig tap0 inet6 -ifdisabled up");
 #else
   uip_getdraddr(&ip);

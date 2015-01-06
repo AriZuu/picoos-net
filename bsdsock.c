@@ -40,7 +40,7 @@
 #define SOCKET_UNDEF_TCP  ((void*)1)
 #define SOCKET_UNDEF_UDP  ((void*)2)
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 #define SOCKADDR2UIP(sa) (&(((struct sockaddr_in6*)sa)->sin6_addr.un.uip))
 #define SOCKADDR2PORT(sa) (((struct sockaddr_in6*)sa)->sin6_port)
 #else
@@ -83,7 +83,7 @@ int net_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
   if (sock == NULL)
     return -1;
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
   *addrlen = sizeof(struct sockaddr_in6);
 #else
   *addrlen = sizeof(struct sockaddr_in);
@@ -166,7 +166,7 @@ int net_write(int s, const void *dataptr, size_t size)
   return net_send(s, dataptr, size, 0);
 }
 
-#if !UIP_CONF_IPV6
+#if !NETSTACK_CONF_WITH_IPV6
 int inet_aton(const char *cp, struct in_addr *pin)
 {
   return uiplib_ipaddrconv(cp, &pin->uip);

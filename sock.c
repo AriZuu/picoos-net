@@ -41,8 +41,8 @@
 #define NETCFG_TASK_PRIORITY 3
 #endif
 
-#if UIP_CONF_IPV6
-#include "net/uip-ds6.h"
+#if NETSTACK_CONF_WITH_IPV6
+#include "net/ipv6/uip-ds6.h"
 #endif
 
 #if NETCFG_SOCKETS == 1
@@ -798,7 +798,7 @@ void netInit()
   netInterfaceInit();
   uip_init();
 
-#if UIP_CONF_IPV6 == 0
+#if NETSTACK_CONF_WITH_IPV6 == 0
   uip_arp_init();
 #endif
 
@@ -810,14 +810,14 @@ void netInit()
 void netMainThread(void* arg)
 {
   uint8_t i;
-#if !UIP_CONF_IPV6
+#if !NETSTACK_CONF_WITH_IPV6
   POSTIMER_t arpTimer;
 #endif
   POSTIMER_t periodicTimer;
   int sendRequested;
   bool packetSeen;
 
-#if !UIP_CONF_IPV6
+#if !NETSTACK_CONF_WITH_IPV6
   arpTimer = posTimerCreate();
   P_ASSERT("netMainThread1", arpTimer != NULL);
 
@@ -869,7 +869,7 @@ void netMainThread(void* arg)
 #if NETCFG_UIP_SPLIT == 1
           uip_split_output();
 #else
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
           tcpip_ipv6_output();
 #else
           tcpip_output();
@@ -885,7 +885,7 @@ void netMainThread(void* arg)
         uip_udp_periodic(i);
         if(uip_len > 0) {
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
           tcpip_ipv6_output();
 #else
           tcpip_output();
@@ -908,7 +908,7 @@ void netMainThread(void* arg)
 #if NETCFG_UIP_SPLIT == 1
           uip_split_output();
 #else
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
           tcpip_ipv6_output();
 #else
           tcpip_output();
@@ -923,7 +923,7 @@ void netMainThread(void* arg)
         uip_udp_periodic(i);
         if(uip_len > 0) {
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
           tcpip_ipv6_output();
 #else
           tcpip_output();
@@ -934,7 +934,7 @@ void netMainThread(void* arg)
 
     }
 
-#if UIP_CONF_IPV6 == 0
+#if NETSTACK_CONF_WITH_IPV6 == 0
     if (posTimerFired(arpTimer)) {
 
       uip_arp_timer();
@@ -953,7 +953,7 @@ void netMainThread(void* arg)
 
 void etimer_callback(struct etimer* et)
 {
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
    
 #if !UIP_CONF_ROUTER
     if (et == &uip_ds6_timer_rs) {

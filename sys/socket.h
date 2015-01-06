@@ -44,7 +44,7 @@ extern "C" {
 typedef uint8_t sa_family_t;
 typedef uint16_t in_port_t;
 
-#if !UIP_CONF_IPV6
+#if !NETSTACK_CONF_WITH_IPV6
 struct __attribute__((aligned(4))) sockaddr_in {
   uint8_t         sin_len;
   sa_family_t     sin_family;
@@ -55,7 +55,7 @@ struct __attribute__((aligned(4))) sockaddr_in {
 };
 #endif
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 struct __attribute__((aligned(4))) sockaddr_in6 {
   uint8_t         sin6_len;      /* length of this structure */
   sa_family_t     sin6_family;   /* AF_INET6                 */
@@ -68,7 +68,7 @@ struct __attribute__((aligned(4))) sockaddr_in6 {
 struct __attribute__((aligned(4))) sockaddr {
   uint8_t     sa_len;
   sa_family_t sa_family;
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
   char        sa_data[22];
 #else
   char        sa_data[14];
@@ -80,7 +80,7 @@ struct __attribute__((aligned(4))) sockaddr_storage {
   sa_family_t ss_family;
   char        s2_data1[2];
   uint32_t    s2_data2[3];
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
   uint32_t    s2_data3[2];
 #endif
 };
@@ -138,7 +138,7 @@ struct linger {
 
 #define AF_UNSPEC       0
 #define AF_INET         2
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 #define AF_INET6        10
 #else
 #define AF_INET6        AF_UNSPEC
@@ -151,7 +151,7 @@ struct linger {
 #define IPPROTO_ICMP    1
 #define IPPROTO_TCP     6
 #define IPPROTO_UDP     17
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 #define IPPROTO_IPV6    41
 #define IPPROTO_ICMPV6  58
 #endif

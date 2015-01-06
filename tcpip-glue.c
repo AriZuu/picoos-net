@@ -46,15 +46,15 @@ void tcpip_input()
   }
 
   uip_len = 0;
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
   uip_ext_len = 0;
-#endif /*UIP_CONF_IPV6*/
+#endif /*NETSTACK_CONF_WITH_IPV6*/
 }
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 
 uint8_t
-tcpip_output(uip_lladdr_t *a)
+tcpip_output(const uip_lladdr_t *a)
 {
   netInterfaceOutput(a);
   return 0;

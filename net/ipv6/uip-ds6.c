@@ -1,16 +1,3 @@
-/**
- * \addtogroup uip6
- * @{
- */
-
-/**
- * \file
- *         IPv6 data structures handling functions.
- *         Comprises part of the Neighbor discovery (RFC 4861)
- *         and auto configuration (RFC 4862) state machines.
- * \author Mathilde Durvy <mdurvy@cisco.com>
- * \author Julien Abeille <jabeille@cisco.com>
- */
 /*
  * Copyright (c) 2006, Swedish Institute of Computer Science.
  * All rights reserved.
@@ -40,21 +27,34 @@
  * SUCH DAMAGE.
  *
  */
+
+/**
+ * \file
+ *         IPv6 data structures handling functions.
+ *         Comprises part of the Neighbor discovery (RFC 4861)
+ *         and auto configuration (RFC 4862) state machines.
+ * \author Mathilde Durvy <mdurvy@cisco.com>
+ * \author Julien Abeille <jabeille@cisco.com>
+ */
+
+/**
+ * \addtogroup uip6
+ * @{
+ */
+
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include "lib/random.h"
-#include "net/uip-nd6.h"
-#include "net/uip-ds6.h"
+#include "net/ipv6/uip-nd6.h"
+#include "net/ipv6/uip-ds6.h"
 
 #if UIP_CONF_IPV6_QUEUE_PKT
-#include "net/uip-packetqueue.h"
+#include "net/ip/uip-packetqueue.h"
 #endif
 
-#if UIP_CONF_IPV6
-
 #define DEBUG DEBUG_NONE
-#include "net/uip-debug.h"
+#include "net/ip/uip-debug.h"
 
 struct etimer uip_ds6_timer_periodic;                           /** \brief Timer for maintenance of data structures */
 
@@ -189,12 +189,12 @@ uip_ds6_periodic(void)
 
   uip_ds6_neighbor_periodic();
 
-#if UIP_CONF_ROUTER & UIP_ND6_SEND_RA
+#if UIP_CONF_ROUTER && UIP_ND6_SEND_RA
   /* Periodic RA sending */
   if(stimer_expired(&uip_ds6_timer_ra) && (uip_len == 0)) {
     uip_ds6_send_ra_periodic();
   }
-#endif /* UIP_CONF_ROUTER & UIP_ND6_SEND_RA */
+#endif /* UIP_CONF_ROUTER && UIP_ND6_SEND_RA */
   etimer_reset(&uip_ds6_timer_periodic);
   return;
 }
@@ -528,6 +528,10 @@ uip_ds6_select_src(uip_ipaddr_t *src, uip_ipaddr_t *dst)
         }
       }
     }
+#if UIP_IPV6_MULTICAST
+  } else if(uip_is_addr_mcast_routable(dst)) {
+    matchaddr = uip_ds6_get_global(ADDR_PREFERRED);
+#endif
   } else {
     matchaddr = uip_ds6_get_link_local(ADDR_PREFERRED);
   }
@@ -714,5 +718,5 @@ uip_ds6_compute_reachable_time(void)
                 UIP_ND6_MIN_RANDOM_FACTOR(uip_ds6_if.base_reachable_time));
 }
 /*---------------------------------------------------------------------------*/
-/** @} */
-#endif /* UIP_CONF_IPV6 */
+
+/** @}*/

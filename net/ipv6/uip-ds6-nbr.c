@@ -1,8 +1,3 @@
-/**
- * \addtogroup uip6
- * @{
- */
-
 /*
  * Copyright (c) 2013, Swedish Institute of Computer Science.
  * All rights reserved.
@@ -43,15 +38,20 @@
  *
  */
 
+/**
+ * \addtogroup uip6
+ * @{
+ */
+
 #include <string.h>
 #include <stdlib.h>
 #include <stddef.h>
 #include "lib/list.h"
-#include "net/rime/rimeaddr.h"
-#include "net/uip-ds6-nbr.h"
+#include "net/linkaddr.h"
+#include "net/ipv6/uip-ds6-nbr.h"
 
 #define DEBUG DEBUG_NONE
-#include "net/uip-debug.h"
+#include "net/ip/uip-debug.h"
 
 #ifdef UIP_CONF_DS6_NEIGHBOR_STATE_CHANGED
 #define NEIGHBOR_STATE_CHANGED(n) UIP_CONF_DS6_NEIGHBOR_STATE_CHANGED(n)
@@ -62,7 +62,7 @@ void NEIGHBOR_STATE_CHANGED(uip_ds6_nbr_t *n);
 
 #ifdef UIP_CONF_DS6_LINK_NEIGHBOR_CALLBACK
 #define LINK_NEIGHBOR_CALLBACK(addr, status, numtx) UIP_CONF_DS6_LINK_NEIGHBOR_CALLBACK(addr, status, numtx)
-void LINK_NEIGHBOR_CALLBACK(const rimeaddr_t *addr, int status, int numtx);
+void LINK_NEIGHBOR_CALLBACK(const linkaddr_t *addr, int status, int numtx);
 #else
 #define LINK_NEIGHBOR_CALLBACK(addr, status, numtx)
 #endif /* UIP_CONF_DS6_LINK_NEIGHBOR_CALLBACK */
@@ -77,10 +77,10 @@ uip_ds6_neighbors_init(void)
 }
 /*---------------------------------------------------------------------------*/
 uip_ds6_nbr_t *
-uip_ds6_nbr_add(uip_ipaddr_t *ipaddr, uip_lladdr_t *lladdr,
+uip_ds6_nbr_add(const uip_ipaddr_t *ipaddr, const uip_lladdr_t *lladdr,
                 uint8_t isrouter, uint8_t state)
 {
-  uip_ds6_nbr_t *nbr = nbr_table_add_lladdr(ds6_neighbors, (rimeaddr_t*)lladdr);
+  uip_ds6_nbr_t *nbr = nbr_table_add_lladdr(ds6_neighbors, (linkaddr_t*)lladdr);
   if(nbr) {
     uip_ipaddr_copy(&nbr->ipaddr, ipaddr);
     nbr->isrouter = isrouter;
@@ -124,17 +124,17 @@ uip_ds6_nbr_rm(uip_ds6_nbr_t *nbr)
 }
 
 /*---------------------------------------------------------------------------*/
-uip_ipaddr_t *
-uip_ds6_nbr_get_ipaddr(uip_ds6_nbr_t *nbr)
+const uip_ipaddr_t *
+uip_ds6_nbr_get_ipaddr(const uip_ds6_nbr_t *nbr)
 {
   return (nbr != NULL) ? &nbr->ipaddr : NULL;
 }
 
 /*---------------------------------------------------------------------------*/
-uip_lladdr_t *
-uip_ds6_nbr_get_ll(uip_ds6_nbr_t *nbr)
+const uip_lladdr_t *
+uip_ds6_nbr_get_ll(const uip_ds6_nbr_t *nbr)
 {
-  return (uip_lladdr_t *)nbr_table_get_lladdr(ds6_neighbors, nbr);
+  return (const uip_lladdr_t *)nbr_table_get_lladdr(ds6_neighbors, nbr);
 }
 /*---------------------------------------------------------------------------*/
 int
@@ -153,7 +153,7 @@ uip_ds6_nbr_num(void)
 }
 /*---------------------------------------------------------------------------*/
 uip_ds6_nbr_t *
-uip_ds6_nbr_lookup(uip_ipaddr_t *ipaddr)
+uip_ds6_nbr_lookup(const uip_ipaddr_t *ipaddr)
 {
   uip_ds6_nbr_t *nbr = nbr_table_head(ds6_neighbors);
   if(ipaddr != NULL) {
@@ -168,22 +168,22 @@ uip_ds6_nbr_lookup(uip_ipaddr_t *ipaddr)
 }
 /*---------------------------------------------------------------------------*/
 uip_ds6_nbr_t *
-uip_ds6_nbr_ll_lookup(uip_lladdr_t *lladdr)
+uip_ds6_nbr_ll_lookup(const uip_lladdr_t *lladdr)
 {
-  return nbr_table_get_from_lladdr(ds6_neighbors, (rimeaddr_t*)lladdr);
+  return nbr_table_get_from_lladdr(ds6_neighbors, (linkaddr_t*)lladdr);
 }
 
 /*---------------------------------------------------------------------------*/
 uip_ipaddr_t *
-uip_ds6_nbr_ipaddr_from_lladdr(uip_lladdr_t *lladdr)
+uip_ds6_nbr_ipaddr_from_lladdr(const uip_lladdr_t *lladdr)
 {
   uip_ds6_nbr_t *nbr = uip_ds6_nbr_ll_lookup(lladdr);
   return nbr ? &nbr->ipaddr : NULL;
 }
 
 /*---------------------------------------------------------------------------*/
-uip_lladdr_t *
-uip_ds6_nbr_lladdr_from_ipaddr(uip_ipaddr_t *ipaddr)
+const uip_lladdr_t *
+uip_ds6_nbr_lladdr_from_ipaddr(const uip_ipaddr_t *ipaddr)
 {
   uip_ds6_nbr_t *nbr = uip_ds6_nbr_lookup(ipaddr);
   return nbr ? uip_ds6_nbr_get_ll(nbr) : NULL;
@@ -197,20 +197,33 @@ uip_ds6_nbr_lladdr_from_ipaddr(uip_ipaddr_t *ipaddr)
 void
 uip_ds6_link_neighbor_callback(int status, int numtx)
 {
-  const rimeaddr_t *dest = packetbuf_addr(PACKETBUF_ADDR_RECEIVER);
-  if(rimeaddr_cmp(dest, &rimeaddr_null)) {
+  const linkaddr_t *dest = packetbuf_addr(PACKETBUF_ADDR_RECEIVER);
+  if(linkaddr_cmp(dest, &linkaddr_null)) {
     return;
   }
 
   LINK_NEIGHBOR_CALLBACK(dest, status, numtx);
 
 #if UIP_DS6_LL_NUD
+  /* From RFC4861, page 72, last paragraph of section 7.3.3:
+   *
+   * 	"In some cases, link-specific information may indicate that a path to
+   * 	a neighbor has failed (e.g., the resetting of a virtual circuit). In
+   * 	such cases, link-specific information may be used to purge Neighbor
+   * 	Cache entries before the Neighbor Unreachability Detection would do
+   * 	so. However, link-specific information MUST NOT be used to confirm
+   * 	the reachability of a neighbor; such information does not provide
+   * 	end-to-end confirmation between neighboring IP layers."
+   *
+   * However, we assume that receiving a link layer ack ensures the delivery
+   * of the transmitted packed to the IP stack of the neighbour. This is a 
+   * fair assumption and allows battery powered nodes save some battery by 
+   * not re-testing the state of a neighbour periodically if it 
+   * acknowledges link packets. */
   if(status == MAC_TX_OK) {
     uip_ds6_nbr_t *nbr;
     nbr = uip_ds6_nbr_ll_lookup((uip_lladdr_t *)dest);
-    if(nbr != NULL &&
-        (nbr->state == NBR_STALE || nbr->state == NBR_DELAY ||
-         nbr->state == NBR_PROBE)) {
+    if(nbr != NULL && nbr->state != NBR_INCOMPLETE) {
       nbr->state = NBR_REACHABLE;
       stimer_set(&nbr->reachable, UIP_ND6_REACHABLE_TIME / 1000);
       PRINTF("uip-ds6-neighbor : received a link layer ACK : ");
@@ -232,10 +245,32 @@ uip_ds6_neighbor_periodic(void)
     switch(nbr->state) {
     case NBR_REACHABLE:
       if(stimer_expired(&nbr->reachable)) {
+#if UIP_CONF_IPV6_RPL
+        /* when a neighbor leave it's REACHABLE state and is a default router,
+           instead of going to STALE state it enters DELAY state in order to
+           force a NUD on it. Otherwise, if there is no upward traffic, the
+           node never knows if the default router is still reachable. This
+           mimics the 6LoWPAN-ND behavior.
+         */
+        if(uip_ds6_defrt_lookup(&nbr->ipaddr) != NULL) {
+          PRINTF("REACHABLE: defrt moving to DELAY (");
+          PRINT6ADDR(&nbr->ipaddr);
+          PRINTF(")\n");
+          nbr->state = NBR_DELAY;
+          stimer_set(&nbr->reachable, UIP_ND6_DELAY_FIRST_PROBE_TIME);
+          nbr->nscount = 0;
+        } else {
+          PRINTF("REACHABLE: moving to STALE (");
+          PRINT6ADDR(&nbr->ipaddr);
+          PRINTF(")\n");
+          nbr->state = NBR_STALE;
+        }
+#else /* UIP_CONF_IPV6_RPL */
         PRINTF("REACHABLE: moving to STALE (");
         PRINT6ADDR(&nbr->ipaddr);
         PRINTF(")\n");
         nbr->state = NBR_STALE;
+#endif /* UIP_CONF_IPV6_RPL */
       }
       break;
 #if UIP_ND6_SEND_NA
@@ -281,7 +316,6 @@ uip_ds6_neighbor_periodic(void)
     nbr = nbr_table_next(ds6_neighbors, nbr);
   }
 }
-
 /*---------------------------------------------------------------------------*/
 uip_ds6_nbr_t *
 uip_ds6_get_least_lifetime_neighbor(void)
@@ -301,3 +335,5 @@ uip_ds6_get_least_lifetime_neighbor(void)
   }
   return nbr_expiring;
 }
+/*---------------------------------------------------------------------------*/
+/** @} */

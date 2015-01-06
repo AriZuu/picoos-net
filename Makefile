@@ -58,7 +58,6 @@ SRC_TXT_CONTIKI =	net/ip/uip-debug.c \
 			net/ip/uip-split.c \
 			net/ip/tcpip.c     \
 			net/ip/uiplib.c    \
-			$(SRC_TXT_CONTIKI4) \
 			lib/random.c	\
 		        lib/list.c	\
 		        lib/memb.c	\
@@ -96,9 +95,21 @@ SRC_TXT =		sock.c \
 			net/dhcpc.c	\
 			$(SRC_TXT_CONTIKI)
 
+ifeq '$(strip $(NETCFG_STACK))' '6'
+CDEFINES += NETSTACK_CONF_WITH_IPV6=1
+SRC_TXT += $(SRC_TXT_CONTIKI6)
+else
+ifeq '$(strip $(NETCFG_STACK))' '4'
+CDEFINES += NETSTACK_CONF_WITH_IPV4=1
+SRC_TXT += $(SRC_TXT_CONTIKI4)
+else
+$(error Network stack must be selected by setting NETCFG_STACK to 4 or 6)
+endif
+endif
+
 SRC_HDR = $(SRC_HDR_CONTIKI) in.h in6.h picoos-net.h
 SRC_OBJ =
-CDEFINES += $(BSP_DEFINES) _XOPEN_SOURCE=700
+CDEFINES += $(BSP_DEFINES)  _XOPEN_SOURCE=700
 
 MODULES  += ../picoos-micro
 
