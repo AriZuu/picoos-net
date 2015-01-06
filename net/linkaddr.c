@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Swedish Institute of Computer Science.
+ * Copyright (c) 2007, Swedish Institute of Computer Science.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,96 +28,50 @@
  *
  * This file is part of the Contiki operating system.
  *
- * Author: Adam Dunkels <adam@sics.se>
- *
  */
 
 /**
- * \addtogroup memb
+ * \file
+ *         Functions for manipulating Rime addresses
+ * \author
+ *         Adam Dunkels <adam@sics.se>
+ */
+
+/**
+ * \addtogroup linkaddr
  * @{
  */
 
- /**
- * \file
- * Memory block allocation routines.
- * \author Adam Dunkels <adam@sics.se>
- */
+#include "net/linkaddr.h"
 #include <string.h>
 
-#include "lib/memb.h"
+linkaddr_t linkaddr_node_addr;
+#if LINKADDR_SIZE == 2
+const linkaddr_t linkaddr_null = { { 0, 0 } };
+#else /*LINKADDR_SIZE == 2*/
+#if LINKADDR_SIZE == 8
+const linkaddr_t linkaddr_null = { { 0, 0, 0, 0, 0, 0, 0, 0 } };
+#endif /*LINKADDR_SIZE == 8*/
+#endif /*LINKADDR_SIZE == 2*/
+
 
 /*---------------------------------------------------------------------------*/
 void
-memb_init(struct memb *m)
+linkaddr_copy(linkaddr_t *dest, const linkaddr_t *src)
 {
-  memset(m->count, 0, m->num);
-  memset(m->mem, 0, m->size * m->num);
-}
-/*---------------------------------------------------------------------------*/
-void *
-memb_alloc(struct memb *m)
-{
-  int i;
-
-  for(i = 0; i < m->num; ++i) {
-    if(m->count[i] == 0) {
-      /* If this block was unused, we increase the reference count to
-	 indicate that it now is used and return a pointer to the
-	 memory block. */
-      ++(m->count[i]);
-      return (void *)((char *)m->mem + (i * m->size));
-    }
-  }
-
-  /* No free block was found, so we return NULL to indicate failure to
-     allocate block. */
-  return NULL;
-}
-/*---------------------------------------------------------------------------*/
-char
-memb_free(struct memb *m, void *ptr)
-{
-  int i;
-  char *ptr2;
-
-  /* Walk through the list of blocks and try to find the block to
-     which the pointer "ptr" points to. */
-  ptr2 = (char *)m->mem;
-  for(i = 0; i < m->num; ++i) {
-    
-    if(ptr2 == (char *)ptr) {
-      /* We've found to block to which "ptr" points so we decrease the
-	 reference count and return the new value of it. */
-      if(m->count[i] > 0) {
-	/* Make sure that we don't deallocate free memory. */
-	--(m->count[i]);
-      }
-      return m->count[i];
-    }
-    ptr2 += m->size;
-  }
-  return -1;
+	memcpy(dest, src, LINKADDR_SIZE);
 }
 /*---------------------------------------------------------------------------*/
 int
-memb_inmemb(struct memb *m, void *ptr)
+linkaddr_cmp(const linkaddr_t *addr1, const linkaddr_t *addr2)
 {
-  return (char *)ptr >= (char *)m->mem &&
-    (char *)ptr < (char *)m->mem + (m->num * m->size);
+	return (memcmp(addr1, addr2, LINKADDR_SIZE) == 0);
 }
 /*---------------------------------------------------------------------------*/
-int
-memb_numfree(struct memb *m)
+void
+linkaddr_set_node_addr(linkaddr_t *t)
 {
-  int i;
-  int num_free = 0;
-
-  for(i = 0; i < m->num; ++i) {
-    if(m->count[i] == 0) {
-      ++num_free;
-    }
-  }
-
-  return num_free;
+  linkaddr_copy(&linkaddr_node_addr, t);
 }
+/*---------------------------------------------------------------------------*/
 /** @} */

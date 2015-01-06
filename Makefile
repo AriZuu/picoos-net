@@ -42,20 +42,23 @@ TARGET = picoos-net
 
 CONTIKI_DIR = ../contiki-uip
 
+SRC_TXT_CONTIKI4 =	net/ipv4/uip.c	\
+			net/ipv4/uip_arp.c  
+
+SRC_TXT_CONTIKI6 =	net/ipv6/uip6.c      \
+			net/ipv6/uip-icmp6.c \
+			net/ipv6/uip-ds6.c   \
+			net/ipv6/uip-ds6-route.c \
+			net/ipv6/uip-nd6.c       \
+			net/ipv6/uip-ds6-nbr.c 
+
 SRC_TXT_CONTIKI =	net/ip/uip-debug.c \
 			net/ip/uip-split.c \
 			net/ip/tcpip.c     \
 			net/ip/uiplib.c    \
-			net/ipv4/uip.c	\
-			net/ipv4/uip_arp.c   \
-			net/ipv6/uip6.c      \
-			net/ipv6/uip-icmp6.c \
-			net/ipv6/uip-ds6.c   \
-			net/ipv6/uip-ds6-route.c \
-			net/ipv6/uip-ds6-nbr.c   \
+			$(SRC_TXT_CONTIKI4) \
 			net/nbr-table.c     \
 			net/linkaddr.c \
-			net/ipv6/uip-nd6.c       \
 			lib/random.c	\
 		        lib/list.c	\
 		        lib/memb.c	\
