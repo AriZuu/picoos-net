@@ -81,8 +81,8 @@ extern "C"
 {
 #endif /* __cplusplus */
 
-#include <net/uip.h>
-#include <net/uip_arp.h>
+#include <net/ip/uip.h>
+#include <net/ipv4/uip_arp.h>
 
 /**
  * @defgroup driver-api Driver API

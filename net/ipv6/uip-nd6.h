@@ -1,15 +1,3 @@
-/**
- * \addtogroup uip6
- * @{
- */
-
-/**
- * \file
- *         Neighbor discovery (RFC 4861)
- * \author Julien Abeille <jabeille@cisco.com>
- * \author Mathilde Durvy <mdurvy@cisco.com>
- */
-
 /*
  * Copyright (c) 2006, Swedish Institute of Computer Science.
  * All rights reserved.
@@ -42,10 +30,22 @@
  *
  */
 
-#ifndef __UIP_ND6_H__
-#define __UIP_ND6_H__
+/**
+ * \file
+ *         Neighbor discovery (RFC 4861)
+ * \author Julien Abeille <jabeille@cisco.com>
+ * \author Mathilde Durvy <mdurvy@cisco.com>
+ */
 
-#include "net/uip.h"
+/**
+ * \addtogroup uip6
+ * @{
+ */
+
+#ifndef UIP_ND6_H_
+#define UIP_ND6_H_
+
+#include "net/ip/uip.h"
 #include "sys/stimer.h"
 /**
  *  \name General
@@ -76,15 +76,27 @@
 #else
 #define UIP_ND6_SEND_NA UIP_CONF_ND6_SEND_NA
 #endif
+#ifndef UIP_CONF_ND6_MAX_RA_INTERVAL
 #define UIP_ND6_MAX_RA_INTERVAL             600
+#else
+#define UIP_ND6_MAX_RA_INTERVAL             UIP_CONF_ND6_MAX_RA_INTERVAL
+#endif
+#ifndef UIP_CONF_ND6_MIN_RA_INTERVAL
 #define UIP_ND6_MIN_RA_INTERVAL             (UIP_ND6_MAX_RA_INTERVAL / 3)
+#else
+#define UIP_ND6_MIN_RA_INTERVAL             UIP_CONF_ND6_MIN_RA_INTERVAL
+#endif
 #define UIP_ND6_M_FLAG                      0
 #define UIP_ND6_O_FLAG                      0
 #define UIP_ND6_ROUTER_LIFETIME             3 * UIP_ND6_MAX_RA_INTERVAL
 
 #define UIP_ND6_MAX_INITIAL_RA_INTERVAL     16  /*seconds*/
 #define UIP_ND6_MAX_INITIAL_RAS             3   /*transmissions*/
+#ifndef UIP_CONF_ND6_MIN_DELAY_BETWEEN_RAS
 #define UIP_ND6_MIN_DELAY_BETWEEN_RAS       3   /*seconds*/
+#else
+#define UIP_ND6_MIN_DELAY_BETWEEN_RAS       UIP_CONF_ND6_MIN_DELAY_BETWEEN_RAS
+#endif
 //#define UIP_ND6_MAX_RA_DELAY_TIME           0.5 /*seconds*/
 #define UIP_ND6_MAX_RA_DELAY_TIME_MS        500 /*milli seconds*/
 /** @} */
@@ -341,34 +353,8 @@ uip_nd6_ns_input(void);
 void
 uip_nd6_ns_output(uip_ipaddr_t *src, uip_ipaddr_t *dest, uip_ipaddr_t *tgt);
 
-/**
- * \brief Process a Neighbor Advertisement
- *
- * we might have to send a pkt that had been buffered while address
- * resolution was performed (if we support buffering, see UIP_CONF_QUEUE_PKT)
- *
- * As per RFC 4861, on link layer that have addresses, TLLAO options MUST be
- * included when responding to multicast solicitations, SHOULD be included in
- * response to unicast (here we assume it is for now)
- *
- * NA can be received after sending NS for DAD, Address resolution or NUD. Can
- * be unsolicited as well.
- * It can trigger update of the state of the neighbor in the neighbor cache,
- * router in the router list.
- * If the NS was for DAD, it means DAD failed
- *
- */
-void
-uip_nd6_na_input(void);
-
 #if UIP_CONF_ROUTER
 #if UIP_ND6_SEND_RA
-/**
- * \brief Process a Router Solicitation
- *
- */
-void uip_nd6_rs_input(void);
-
 /**
  * \brief send a Router Advertisement
  *
@@ -392,17 +378,9 @@ void uip_nd6_ra_output(uip_ipaddr_t *dest);
 void uip_nd6_rs_output(void);
 
 /**
- *
- * \brief process a Router Advertisement
- *
- * - Possible actions when receiving a RA: add router to router list,
- *   recalculate reachable time, update link hop limit, update retrans timer.
- * - If MTU option: update MTU.
- * - If SLLAO option: update entry in neighbor cache
- * - If prefix option: start autoconf, add prefix to prefix list
+ * \brief Initialise the uIP ND core
  */
-void
-uip_nd6_ra_input(void);
+void uip_nd6_init(void);
 /** @} */
 
 
@@ -566,6 +544,6 @@ uip_appserver_addr_get(uip_ipaddr_t *ipaddr);
  *    +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
  *
  */
-#endif /* __UIP_ND6_H__ */
+#endif /* UIP_ND6_H_ */
 
 /** @} */

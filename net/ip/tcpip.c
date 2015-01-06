@@ -38,18 +38,18 @@
  * \author  Julien Abeille <jabeille@cisco.com> (IPv6 related code)
  */
 
-#include "net/uip.h"
-#include "net/uipopt.h"
+#include "net/ip/uip.h"
+#include "net/ip/uipopt.h"
 
-#if UIP_CONF_IPV6
-#include "net/uip-nd6.h"
-#include "net/uip-ds6.h"
+#if NETSTACK_CONF_WITH_IPV6
+#include "net/ipv6/uip-nd6.h"
+#include "net/ipv6/uip-ds6.h"
 #endif
 
 #include <string.h>
 
 #define DEBUG DEBUG_NONE
-#include "net/uip-debug.h"
+#include "net/ip/uip-debug.h"
 
 #if UIP_LOGGING
 #include <stdio.h>
@@ -81,7 +81,7 @@ process_event_t tcpip_icmp6_event;
 /* Periodic check of active connections. */
 static struct etimer periodic;
 
-#if UIP_CONF_IPV6 && UIP_CONF_IPV6_REASSEMBLY
+#if NETSTACK_CONF_WITH_IPV6 && UIP_CONF_IPV6_REASSEMBLY
 /* Timer for reassembly. */
 extern struct etimer uip_reass_timer;
 #endif
@@ -108,12 +108,12 @@ enum {
 };
 
 /* Called on IP packet output. */
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 
-static uint8_t (* outputfunc)(uip_lladdr_t *a);
+static uint8_t (* outputfunc)(const uip_lladdr_t *a);
 
 uint8_t
-tcpip_output(uip_lladdr_t *a)
+tcpip_output(const uip_lladdr_t *a)
 {
   int ret;
   if(outputfunc != NULL) {
@@ -125,7 +125,7 @@ tcpip_output(uip_lladdr_t *a)
 }
 
 void
-tcpip_set_outputfunc(uint8_t (*f)(uip_lladdr_t *))
+tcpip_set_outputfunc(uint8_t (*f)(const uip_lladdr_t *))
 {
   outputfunc = f;
 }
@@ -195,7 +195,7 @@ packet_input(void)
 #if UIP_CONF_TCP_SPLIT
         uip_split_output();
 #else /* UIP_CONF_TCP_SPLIT */
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
         tcpip_ipv6_output();
 #else
 	PRINTF("tcpip packet_input forward output len %d\n", uip_len);
@@ -214,7 +214,7 @@ packet_input(void)
 #if UIP_CONF_TCP_SPLIT
       uip_split_output();
 #else /* UIP_CONF_TCP_SPLIT */
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
       tcpip_ipv6_output();
 #else
       PRINTF("tcpip packet_input output len %d\n", uip_len);
@@ -332,11 +332,11 @@ udp_broadcast_new(uint16_t port, void *appstate)
   uip_ipaddr_t addr;
   struct uip_udp_conn *conn;
 
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
   uip_create_linklocal_allnodes_mcast(&addr);
 #else
   uip_ipaddr(&addr, 255,255,255,255);
-#endif /* UIP_CONF_IPV6 */
+#endif /* NETSTACK_CONF_WITH_IPV6 */
   conn = udp_new(&addr, port, appstate);
   if(conn != NULL) {
     udp_bind(conn, port);
@@ -435,7 +435,7 @@ eventhandler(process_event_t ev, process_data_t data)
                  connections. */
               etimer_restart(&periodic);
               uip_periodic(i);
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
               tcpip_ipv6_output();
 #else
               if(uip_len > 0) {
@@ -443,7 +443,7 @@ eventhandler(process_event_t ev, process_data_t data)
                 tcpip_output();
 		PRINTF("tcpip_output after periodic len %d\n", uip_len);
               }
-#endif /* UIP_CONF_IPV6 */
+#endif /* NETSTACK_CONF_WITH_IPV6 */
             }
           }
 #endif /* UIP_TCP */
@@ -452,7 +452,7 @@ eventhandler(process_event_t ev, process_data_t data)
 #endif /* UIP_CONF_IP_FORWARD */
         }
         
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 #if UIP_CONF_IPV6_REASSEMBLY
         /*
          * check the timer for reassembly
@@ -484,7 +484,7 @@ eventhandler(process_event_t ev, process_data_t data)
           uip_ds6_periodic();
           tcpip_ipv6_output();
         }
-#endif /* UIP_CONF_IPV6 */
+#endif /* NETSTACK_CONF_WITH_IPV6 */
       }
       break;
 	 
@@ -492,14 +492,14 @@ eventhandler(process_event_t ev, process_data_t data)
     case TCP_POLL:
       if(data != NULL) {
         uip_poll_conn(data);
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
         tcpip_ipv6_output();
-#else /* UIP_CONF_IPV6 */
+#else /* NETSTACK_CONF_WITH_IPV6 */
         if(uip_len > 0) {
 	  PRINTF("tcpip_output from tcp poll len %d\n", uip_len);
           tcpip_output();
         }
-#endif /* UIP_CONF_IPV6 */
+#endif /* NETSTACK_CONF_WITH_IPV6 */
         /* Start the periodic polling, if it isn't already active. */
         start_periodic_tcp_timer();
       }
@@ -509,7 +509,7 @@ eventhandler(process_event_t ev, process_data_t data)
     case UDP_POLL:
       if(data != NULL) {
         uip_udp_periodic_conn(data);
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
         tcpip_ipv6_output();
 #else
         if(uip_len > 0) {
@@ -531,15 +531,15 @@ tcpip_input(void)
 {
   process_post_synch(&tcpip_process, PACKET_INPUT, NULL);
   uip_len = 0;
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
   uip_ext_len = 0;
-#endif /*UIP_CONF_IPV6*/
+#endif /*NETSTACK_CONF_WITH_IPV6*/
 }
 
 #endif /* POS_VER_N */
 
 /*---------------------------------------------------------------------------*/
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 void
 tcpip_ipv6_output(void)
 {
@@ -620,7 +620,7 @@ tcpip_ipv6_output(void)
 
             rpl_repair_root(instance->instance_id);
           }
-#endif /* UIP_CONF_RPL */
+#endif /* UIP_CONF_IPV6_RPL */
           uip_ds6_route_rm(route);
 
           /* We don't have a nexthop to send the packet to, so we drop
@@ -733,7 +733,7 @@ tcpip_ipv6_output(void)
   uip_len = 0;
   uip_ext_len = 0;
 }
-#endif /* UIP_CONF_IPV6 */
+#endif /* NETSTACK_CONF_WITH_IPV6 */
 
 #ifndef POS_VER_N
 /*---------------------------------------------------------------------------*/
@@ -824,7 +824,7 @@ PROCESS_THREAD(tcpip_process, ev, data)
   UIP_FALLBACK_INTERFACE.init();
 #endif
 /* initialize RPL if configured for using RPL */
-#if UIP_CONF_IPV6 && UIP_CONF_IPV6_RPL
+#if NETSTACK_CONF_WITH_IPV6 && UIP_CONF_IPV6_RPL
   rpl_init();
 #endif /* UIP_CONF_IPV6_RPL */
 

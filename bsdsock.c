@@ -32,7 +32,7 @@
 #include <picoos-net.h>
 #include <sys/socket.h>
 #include <string.h>
-#include <net/uiplib.h>
+#include <net/ip/uiplib.h>
 
 #if NETCFG_BSD_SOCKETS == 1
 

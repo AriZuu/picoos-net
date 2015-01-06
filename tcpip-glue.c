@@ -31,7 +31,7 @@
 #include <picoos.h>
 #include <picoos-net.h>
 #include <string.h>
-#include <net/uip-split.h>
+#include <net/ip/uip-split.h>
 
 void tcpip_input()
 {

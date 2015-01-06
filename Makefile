@@ -34,7 +34,7 @@
 RELROOT = ../picoos/
 PORT ?= lpc2xxx
 BUILD ?= RELEASE
-AUTO_COPY_CONTIKI_SRC ?= N
+AUTO_COPY_CONTIKI_SRC ?= Y
 
 include $(RELROOT)make/common.mak
 
@@ -42,40 +42,40 @@ TARGET = picoos-net
 
 CONTIKI_DIR = ../contiki-uip
 
-SRC_TXT_CONTIKI =	net/uip.c	\
-			net/uip-split.c \
-			net/uip_arp.c   \
-			net/uip-debug.c \
-			net/tcpip.c     \
-			net/uip6.c      \
-			net/uip-icmp6.c \
-			net/uip-ds6.c   \
-			net/uip-ds6-route.c \
-			net/uip-ds6-nbr.c   \
+SRC_TXT_CONTIKI =	net/ip/uip-debug.c \
+			net/ip/uip-split.c \
+			net/ip/tcpip.c     \
+			net/ip/uiplib.c    \
+			net/ipv4/uip.c	\
+			net/ipv4/uip_arp.c   \
+			net/ipv6/uip6.c      \
+			net/ipv6/uip-icmp6.c \
+			net/ipv6/uip-ds6.c   \
+			net/ipv6/uip-ds6-route.c \
+			net/ipv6/uip-ds6-nbr.c   \
 			net/nbr-table.c     \
-			net/rime/rimeaddr.c \
-			net/uip-nd6.c       \
-			net/uiplib.c    \
+			net/linkaddr.c \
+			net/ipv6/uip-nd6.c       \
 			lib/random.c	\
 		        lib/list.c	\
 		        lib/memb.c	\
 
-SRC_HDR_CONTIKI     =   net/nbr-table.h		\
-			net/rime/rimeaddr.h	\
-			net/tcpip.h		\
-			net/uip-debug.h		\
-			net/uip-ds6-nbr.h	\
-			net/uip-ds6-route.h	\
-			net/uip-ds6.h		\
-			net/uip-fw.h		\
-			net/uip-icmp6.h		\
-			net/uip-nd6.h		\
-			net/uip-split.h		\
-			net/uip.h		\
-			net/uip_arch.h		\
-			net/uip_arp.h		\
-			net/uiplib.h		\
-			net/uipopt.h		\
+SRC_HDR_CONTIKI     =   net/ip/uip-debug.h	\
+			net/ip/uip-split.h	\
+			net/ip/tcpip.h		\
+			net/ip/uiplib.h		\
+			net/ip/uip_arch.h	\
+			net/ip/uipopt.h		\
+			net/ip/uip.h		\
+			net/ipv4/uip-fw.h	\
+			net/ipv4/uip_arp.h	\
+			net/ipv6/uip-ds6-nbr.h	\
+			net/ipv6/uip-ds6-route.h	\
+			net/ipv6/uip-ds6.h	\
+			net/ipv6/uip-icmp6.h	\
+			net/ipv6/uip-nd6.h	\
+			net/nbr-table.h		\
+			net/linkaddr.h		\
 		 	lib/list.h		\
 			lib/memb.h		\
 			lib/random.h

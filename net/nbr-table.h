@@ -32,11 +32,11 @@
  *          Joris Borms <joris.borms@vub.ac.be>
  */
 
-#ifndef _NBR_TABLE_H_
-#define _NBR_TABLE_H_
+#ifndef NBR_TABLE_H_
+#define NBR_TABLE_H_
 
-#include "net/uip.h"
-#include "net/rime/rimeaddr.h"
+#include "net/ip/uip.h"
+#include "net/linkaddr.h"
 
 /* Neighbor table size */
 #ifdef NBR_TABLE_CONF_MAX_NEIGHBORS
@@ -83,8 +83,8 @@ nbr_table_item_t *nbr_table_next(nbr_table_t *table, nbr_table_item_t *item);
 
 /** \name Neighbor tables: add and get data */
 /** @{ */
-nbr_table_item_t *nbr_table_add_lladdr(nbr_table_t *table, const rimeaddr_t *lladdr);
-nbr_table_item_t *nbr_table_get_from_lladdr(nbr_table_t *table, const rimeaddr_t *lladdr);
+nbr_table_item_t *nbr_table_add_lladdr(nbr_table_t *table, const linkaddr_t *lladdr);
+nbr_table_item_t *nbr_table_get_from_lladdr(nbr_table_t *table, const linkaddr_t *lladdr);
 /** @} */
 
 /** \name Neighbor tables: set flags (unused, locked, unlocked) */
@@ -96,7 +96,7 @@ int nbr_table_unlock(nbr_table_t *table, nbr_table_item_t *item);
 
 /** \name Neighbor tables: address manipulation */
 /** @{ */
-rimeaddr_t *nbr_table_get_lladdr(nbr_table_t *table, nbr_table_item_t *item);
+linkaddr_t *nbr_table_get_lladdr(nbr_table_t *table, const nbr_table_item_t *item);
 /** @} */
 
-#endif /* _NBR_TABLE_H_ */
+#endif /* NBR_TABLE_H_ */

@@ -1,35 +1,3 @@
-/**
- * \addtogroup uip
- * @{
- */
-
-/**
- * \defgroup tcpip The Contiki/uIP interface
- * @{
- *
- * TCP/IP support in Contiki is implemented using the uIP TCP/IP
- * stack. For sending and receiving data, Contiki uses the functions
- * provided by the uIP module, but Contiki adds a set of functions for
- * connection management. The connection management functions make
- * sure that the uIP TCP/IP connections are connected to the correct
- * process.
- *
- * Contiki also includes an optional protosocket library that provides
- * an API similar to the BSD socket API.
- *
- * \sa \ref uip "The uIP TCP/IP stack"
- * \sa \ref psock "Protosockets library"
- *
- */
-
-/**
- * \file
- *          Header for the Contiki/uIP interface.
- * \author  Adam Dunkels <adam@sics.se>
- * \author  Mathilde Durvy <mdurvy@cisco.com> (IPv6 related code)
- * \author  Julien Abeille <jabeille@cisco.com> (IPv6 related code)
- */
-
 /*
  * Copyright (c) 2004, Swedish Institute of Computer Science.
  * All rights reserved.
@@ -63,8 +31,41 @@
  * Author: Adam Dunkels <adam@sics.se>
  *
  */
-#ifndef __TCPIP_H__
-#define __TCPIP_H__
+
+/**
+ * \file
+ *          Header for the Contiki/uIP interface.
+ * \author  Adam Dunkels <adam@sics.se>
+ * \author  Mathilde Durvy <mdurvy@cisco.com> (IPv6 related code)
+ * \author  Julien Abeille <jabeille@cisco.com> (IPv6 related code)
+ */
+
+/**
+ * \addtogroup uip
+ * @{
+ */
+
+/**
+ * \defgroup tcpip The Contiki/uIP interface
+ * @{
+ *
+ * TCP/IP support in Contiki is implemented using the uIP TCP/IP
+ * stack. For sending and receiving data, Contiki uses the functions
+ * provided by the uIP module, but Contiki adds a set of functions for
+ * connection management. The connection management functions make
+ * sure that the uIP TCP/IP connections are connected to the correct
+ * process.
+ *
+ * Contiki also includes an optional protosocket library that provides
+ * an API similar to the BSD socket API.
+ *
+ * \sa \ref uip "The uIP TCP/IP stack"
+ * \sa \ref psock "Protosockets library"
+ *
+ */
+
+#ifndef TCPIP_H_
+#define TCPIP_H_
 
 /*
  * Pico]OS: We only need prototypes for tcpip_input & tcpip_output.
@@ -89,7 +90,7 @@ struct tcpip_uipstate {
 typedef struct tcpip_uipstate uip_udp_appstate_t;
 typedef struct tcpip_uipstate uip_tcp_appstate_t;
 typedef struct tcpip_uipstate uip_icmp6_appstate_t;
-#include "net/uip.h"
+#include "net/ip/uip.h"
 void tcpip_uipcall(void);
 
 /**
@@ -346,10 +347,10 @@ CCIF void tcpip_input(void);
  * \brief Output packet to layer 2
  * The eventual parameter is the MAC address of the destination.
  */
-#if UIP_CONF_IPV6
-uint8_t tcpip_output(uip_lladdr_t *);
+#if NETSTACK_CONF_WITH_IPV6
+uint8_t tcpip_output(const uip_lladdr_t *);
 #ifndef POS_VER_N
-void tcpip_set_outputfunc(uint8_t (* f)(uip_lladdr_t *));
+void tcpip_set_outputfunc(uint8_t (* f)(const uip_lladdr_t *));
 #endif
 #else
 uint8_t tcpip_output(void);
@@ -361,7 +362,7 @@ void tcpip_set_outputfunc(uint8_t (* f)(void));
 /**
  * \brief This function does address resolution and then calls tcpip_output
  */
-#if UIP_CONF_IPV6
+#if NETSTACK_CONF_WITH_IPV6
 void tcpip_ipv6_output(void);
 #endif
 
@@ -385,7 +386,7 @@ extern unsigned char tcpip_is_forwarding;
 PROCESS_NAME(tcpip_process);
 
 #endif
-#endif /* __TCPIP_H__ */
+#endif /* TCPIP_H_ */
 
 /** @} */
 /** @} */

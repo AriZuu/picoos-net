@@ -31,7 +31,7 @@
 #include <picoos.h>
 #include <picoos-net.h>
 #include <string.h>
-#include <net/uip-split.h>
+#include <net/ip/uip-split.h>
 
 #ifndef NETCFG_STACK_SIZE
 #define NETCFG_STACK_SIZE 500

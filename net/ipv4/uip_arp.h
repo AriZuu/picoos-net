@@ -1,20 +1,3 @@
-/**
- * \addtogroup uip
- * @{
- */
-
-/**
- * \addtogroup uiparp
- * @{
- */
- 
-/**
- * \file
- * Macros and definitions for the ARP module.
- * \author Adam Dunkels <adam@dunkels.com>
- */
-  
-
 /*
  * Copyright (c) 2001-2003, Adam Dunkels.
  * All rights reserved.
@@ -48,10 +31,26 @@
  *
  */
 
-#ifndef __UIP_ARP_H__
-#define __UIP_ARP_H__
+/**
+ * \file
+ * Macros and definitions for the ARP module.
+ * \author Adam Dunkels <adam@dunkels.com>
+ */
 
-#include "net/uip.h"
+/**
+ * \addtogroup uip
+ * @{
+ */
+
+/**
+ * \addtogroup uiparp
+ * @{
+ */
+ 
+#ifndef UIP_ARP_H_
+#define UIP_ARP_H_
+
+#include "net/ip/uip.h"
 
 
 
@@ -139,5 +138,5 @@ void uip_arp_timer(void);
 /** @} */
 
 
-#endif /* __UIP_ARP_H__ */
+#endif /* UIP_ARP_H_ */
 /** @} */

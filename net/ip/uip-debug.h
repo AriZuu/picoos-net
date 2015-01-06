@@ -41,7 +41,7 @@
 #ifndef UIP_DEBUG_H
 #define UIP_DEBUG_H
 
-#include "net/uip.h"
+#include "net/ip/uip.h"
 
 void uip_debug_ipaddr_print(const uip_ipaddr_t *addr);
 void uip_debug_lladdr_print(const uip_lladdr_t *addr);

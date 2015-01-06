@@ -33,7 +33,7 @@
 #include <string.h>
 
 #if UIP_CONF_UDP > 0
-#include "net/dhcpc.h"
+#include "net/ip/dhcpc.h"
 
 #if !UIP_BROADCAST
 #error UIP_CONF_BROADCAST must be set to 1
