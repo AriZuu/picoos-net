@@ -50,15 +50,15 @@ SRC_TXT_CONTIKI6 =	net/ipv6/uip6.c      \
 			net/ipv6/uip-ds6.c   \
 			net/ipv6/uip-ds6-route.c \
 			net/ipv6/uip-nd6.c       \
-			net/ipv6/uip-ds6-nbr.c 
+			net/ipv6/uip-ds6-nbr.c  \
+			net/nbr-table.c     \
+			net/linkaddr.c
 
 SRC_TXT_CONTIKI =	net/ip/uip-debug.c \
 			net/ip/uip-split.c \
 			net/ip/tcpip.c     \
 			net/ip/uiplib.c    \
 			$(SRC_TXT_CONTIKI4) \
-			net/nbr-table.c     \
-			net/linkaddr.c \
 			lib/random.c	\
 		        lib/list.c	\
 		        lib/memb.c	\
