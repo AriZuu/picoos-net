@@ -43,7 +43,7 @@ struct uip_eth_addr uip_ethaddr = {{0,0,0,0,0,0}};
     NETCFG_DRIVER_TAP == 2
 
 #if NETSTACK_CONF_WITH_IPV6
-void netInterfaceOutput(uip_lladdr_t* lla)
+void netInterfaceOutput(const uip_lladdr_t* lla)
 {
   netEthernetOutput(lla);
 }
@@ -249,7 +249,7 @@ void netEthernetInput()
 }
 
 #if NETSTACK_CONF_WITH_IPV6
-void netEthernetOutput(uip_lladdr_t* lladdr)
+void netEthernetOutput(const uip_lladdr_t* lladdr)
 {
   /*
    * If L3 dest is multicast, build L2 multicast address

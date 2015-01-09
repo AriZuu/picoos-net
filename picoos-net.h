@@ -114,7 +114,7 @@ void netInterfaceInit(void);
  * if needed by device driver (ethernet).
  */
 #if NETSTACK_CONF_WITH_IPV6
-void netInterfaceOutput(uip_lladdr_t* lla);
+void netInterfaceOutput(const uip_lladdr_t* lla);
 #else
 void netInterfaceOutput(void);
 #endif
@@ -134,7 +134,7 @@ void netEthernetInput(void);
  * for ethernet-type devices.
  */
 #if NETSTACK_CONF_WITH_IPV6
-void netEthernetOutput(uip_lladdr_t* lla);
+void netEthernetOutput(const uip_lladdr_t* lla);
 #else
 void netEthernetOutput(void);
 #endif
