@@ -44,7 +44,7 @@ typedef unsigned short uip_stats_t;
 typedef JIF_t clock_time_t;
 
 #define CLOCK_CONF_SECOND HZ
-#define RIMEADDR_CONF_SIZE 8 // IPv6
+#define LINKADDR_CONF_SIZE 8 // IPv6
 
 #include <sys/timer.h>
 #include <sys/etimer.h>
