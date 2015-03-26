@@ -97,7 +97,7 @@ SRC_HDR = $(SRC_HDR_CONTIKI) in.h in6.h picoos-net.h
 SRC_OBJ =
 CDEFINES += $(BSP_DEFINES) _XOPEN_SOURCE=700
 
-MODULES = ../picoos-micro
+MODULES  += ../picoos-micro
 
 include drivers/Makefile
 
