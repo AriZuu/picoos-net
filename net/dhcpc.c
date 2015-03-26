@@ -31,6 +31,8 @@
 #include <picoos.h>
 #include <picoos-net.h>
 #include <string.h>
+
+#if UIP_CONF_UDP > 0
 #include "net/dhcpc.h"
 
 #if !UIP_BROADCAST
@@ -447,3 +449,4 @@ dhcpc_request(void)
 }
 /*---------------------------------------------------------------------------*/
 
+#endif
