@@ -70,9 +70,10 @@ uint8_t tcpip_output(void)
 
 #endif
 
+#if UIP_CONF_LOGGING
 void uip_log(char* m)
 {
   nosPrintf("uip: %s", m);
   nosPrint("\n");
 }
-
+#endif
