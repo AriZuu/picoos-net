@@ -44,7 +44,7 @@
 #include "ppp_frame.h"
 
 static volatile int packetInLen;
-static volatile uint8_t packetIn[UIP_BUFSIZE];
+static uint8_t packetIn[UIP_BUFSIZE];
 static volatile uint8_t* packetInBegin;
 static PPPContext outCtx;
 static PPPContext inCtx;
