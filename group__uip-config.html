@@ -67,49 +67,6 @@ Macros</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>uIP configuration settings that are related to picoos-net. For complete documentation, see related Contiki OS documentation. </p>
 <h2 class="groupheader">Macro Definition Documentation</h2>
-<a class="anchor" id="gacacc406c3bf7d0e00412e4c946252739"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define UIP_CONF_BUFFER_SIZE&#160;&#160;&#160;590</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Size of UIP packet buffer. Using 590 gives TCP MTU of 536 bytes, which is the minimum allowed. </p>
-
-</div>
-</div>
-<a class="anchor" id="gafb852b97535f9f25eb3874dfa223dc06"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define UIP_CONF_IPV6&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>IPv4/IPv6 configuration:</p><ul>
-<li>0: Use IPv4</li>
-<li>1: Use IPv6</li>
-</ul>
-<p>There is no support for dual-stack configuration (ie. both IPv4 &amp; IPv6 enabled). </p>
-
-</div>
-</div>
-<a class="anchor" id="ga3001114ddadc1f2ada5cc9a780e866fc"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define UIP_CONF_LOGGING&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Set to 1 to include uIP error logging. </p>
-
-</div>
-</div>
 <a class="anchor" id="ga3f6f1f6f98431f2d33ed30a30d2ccc35"></a>
 <div class="memitem">
 <div class="memproto">
@@ -137,16 +94,16 @@ Macros</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ga529648ad3b0b327a43689b0f1779ff55"></a>
+<a class="anchor" id="gacacc406c3bf7d0e00412e4c946252739"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">#define UIP_CONF_STATISTICS&#160;&#160;&#160;1</td>
+          <td class="memname">#define UIP_CONF_BUFFER_SIZE&#160;&#160;&#160;590</td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Set to 1 to include uIP runtime statistics support. </p>
+<p>Size of UIP packet buffer. Using 590 gives TCP MTU of 536 bytes, which is the minimum allowed. </p>
 
 </div>
 </div>
@@ -189,10 +146,53 @@ Macros</h2></td></tr>
 
 </div>
 </div>
+<a class="anchor" id="ga529648ad3b0b327a43689b0f1779ff55"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define UIP_CONF_STATISTICS&#160;&#160;&#160;1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Set to 1 to include uIP runtime statistics support. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga3001114ddadc1f2ada5cc9a780e866fc"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define UIP_CONF_LOGGING&#160;&#160;&#160;1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Set to 1 to include uIP error logging. </p>
+
+</div>
+</div>
+<a class="anchor" id="gafb852b97535f9f25eb3874dfa223dc06"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define UIP_CONF_IPV6&#160;&#160;&#160;1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>IPv4/IPv6 configuration:</p><ul>
+<li>0: Use IPv4</li>
+<li>1: Use IPv6</li>
+</ul>
+<p>There is no support for dual-stack configuration (ie. both IPv4 &amp; IPv6 enabled). </p>
+
+</div>
+</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 11 2015 16:30:00 for picoos-net by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 26 2015 20:30:53 for picoos-net by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.9.1
 </small></address>

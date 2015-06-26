@@ -108,49 +108,37 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="gaa84658cf2f9001123d14abf4907ca503"></a>
+<a class="anchor" id="ga17514adca0065eaaa2e471de5a66d5c2"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">NetSock* netSockAccept </td>
+          <td class="memname">int netSockSlot </td>
           <td>(</td>
           <td class="paramtype">NetSock *&#160;</td>
-          <td class="paramname"><em>listenSocket</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
+          <td class="paramname"><em>sock</em></td><td>)</td>
           <td></td>
-          <td class="paramtype">uip_ipaddr_t *&#160;</td>
-          <td class="paramname"><em>peer</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Accept new incoming connection. </p>
+<p>Get socket table slot number for given socket. Used by BSD socket layer to convert socket pointer to socket descriptor number. </p>
 
 </div>
 </div>
-<a class="anchor" id="ga366fdd98b9b12dac9a85862953ea9865"></a>
+<a class="anchor" id="ga781f1340e9494c0269ffde792d2d0f09"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void netSockAcceptHookSet </td>
+          <td class="memname">NetSock* netSockConnection </td>
           <td>(</td>
-          <td class="paramtype">NetSockAcceptHook&#160;</td>
-          <td class="paramname"><em>hook</em></td><td>)</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>slot</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Set <b>accept hook</b> function to handling incoming connections. After accept hook is called by main loop it is responsible for handling the connection. Usually a new pico]OS thread is created to process data.</p>
-<p>Accept hook should not block.</p>
-<p>Accept hook provides functionality that is similar to unix <em>accept()</em>. </p>
+<p>Get NetSock* pointer for given connection slot. </p>
 
 </div>
 </div>
@@ -168,6 +156,67 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Allocate a new socket descriptor by searching for a free one in socket table. </p>
+
+</div>
+</div>
+<a class="anchor" id="gae5e6738d05a9839cc372cf70cefd7cf0"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void netSockFree </td>
+          <td>(</td>
+          <td class="paramtype">NetSock *&#160;</td>
+          <td class="paramname"><em>sock</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Free a new socket descriptor. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga15faecf6ff83ed8b6a862d771bef6e91"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">NetSock* netSockCreateUDP </td>
+          <td>(</td>
+          <td class="paramtype">uip_ipaddr_t *&#160;</td>
+          <td class="paramname"><em>ip</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>port</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Create new UDP socket. This is the same as netSockUdpCreate() in previous versions. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga065c6bf03a61ed34ffc2b84a3058219c"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">NetSock* netSockCreateTCPServer </td>
+          <td>(</td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>port</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Create a server socket, for listening incoming connections. This is same as netSockServerCreate in previous versions. </p>
 
 </div>
 </div>
@@ -198,12 +247,12 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="gaa31793ab936ef42b759f5d47c659d290"></a>
+<a class="anchor" id="gad1d0316692a22e0c8e455bb58bf876c9"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void netSockClose </td>
+          <td class="memname">void netSockListen </td>
           <td>(</td>
           <td class="paramtype">NetSock *&#160;</td>
           <td class="paramname"><em>sock</em></td><td>)</td>
@@ -211,7 +260,61 @@ Functions</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Close a connection. </p>
+<p>Start listening for incoming connections. Port is set during netSockServerCreate(). </p>
+
+</div>
+</div>
+<a class="anchor" id="gaa84658cf2f9001123d14abf4907ca503"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">NetSock* netSockAccept </td>
+          <td>(</td>
+          <td class="paramtype">NetSock *&#160;</td>
+          <td class="paramname"><em>listenSocket</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">uip_ipaddr_t *&#160;</td>
+          <td class="paramname"><em>peer</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Accept new incoming connection. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga5b7526df1f01a29e9c7b90eff8181746"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">NetSock* netSockCreateTCP </td>
+          <td>(</td>
+          <td class="paramtype">uip_ipaddr_t *&#160;</td>
+          <td class="paramname"><em>ip</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>port</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Create new client connection to given IP address and port. This replaces netSockConnect call in previous library versions. </p>
 
 </div>
 </div>
@@ -248,125 +351,22 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ga781f1340e9494c0269ffde792d2d0f09"></a>
+<a class="anchor" id="ga366fdd98b9b12dac9a85862953ea9865"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">NetSock* netSockConnection </td>
+          <td class="memname">void netSockAcceptHookSet </td>
           <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>slot</em></td><td>)</td>
+          <td class="paramtype">NetSockAcceptHook&#160;</td>
+          <td class="paramname"><em>hook</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Get NetSock* pointer for given connection slot. </p>
-
-</div>
-</div>
-<a class="anchor" id="ga5b7526df1f01a29e9c7b90eff8181746"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">NetSock* netSockCreateTCP </td>
-          <td>(</td>
-          <td class="paramtype">uip_ipaddr_t *&#160;</td>
-          <td class="paramname"><em>ip</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>port</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Create new client connection to given IP address and port. This replaces netSockConnect call in previous library versions. </p>
-
-</div>
-</div>
-<a class="anchor" id="ga065c6bf03a61ed34ffc2b84a3058219c"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">NetSock* netSockCreateTCPServer </td>
-          <td>(</td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>port</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Create a server socket, for listening incoming connections. This is same as netSockServerCreate in previous versions. </p>
-
-</div>
-</div>
-<a class="anchor" id="ga15faecf6ff83ed8b6a862d771bef6e91"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">NetSock* netSockCreateUDP </td>
-          <td>(</td>
-          <td class="paramtype">uip_ipaddr_t *&#160;</td>
-          <td class="paramname"><em>ip</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>port</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Create new UDP socket. This is the same as netSockUdpCreate() in previous versions. </p>
-
-</div>
-</div>
-<a class="anchor" id="gae5e6738d05a9839cc372cf70cefd7cf0"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void netSockFree </td>
-          <td>(</td>
-          <td class="paramtype">NetSock *&#160;</td>
-          <td class="paramname"><em>sock</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Free a new socket descriptor. </p>
-
-</div>
-</div>
-<a class="anchor" id="gad1d0316692a22e0c8e455bb58bf876c9"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void netSockListen </td>
-          <td>(</td>
-          <td class="paramtype">NetSock *&#160;</td>
-          <td class="paramname"><em>sock</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Start listening for incoming connections. Port is set during netSockServerCreate(). </p>
+<p>Set <b>accept hook</b> function to handling incoming connections. After accept hook is called by main loop it is responsible for handling the connection. Usually a new pico]OS thread is created to process data.</p>
+<p>Accept hook should not block.</p>
+<p>Accept hook provides functionality that is similar to unix <em>accept()</em>. </p>
 
 </div>
 </div>
@@ -448,23 +448,6 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ga17514adca0065eaaa2e471de5a66d5c2"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">int netSockSlot </td>
-          <td>(</td>
-          <td class="paramtype">NetSock *&#160;</td>
-          <td class="paramname"><em>sock</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Get socket table slot number for given socket. Used by BSD socket layer to convert socket pointer to socket descriptor number. </p>
-
-</div>
-</div>
 <a class="anchor" id="gadaeacd9cd5deb8f5bbb90a6b08487a17"></a>
 <div class="memitem">
 <div class="memproto">
@@ -498,20 +481,20 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="gae2eb57255ef4a67efd00dc0ea0398d9d"></a>
+<a class="anchor" id="gaa31793ab936ef42b759f5d47c659d290"></a>
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">void telnetFlush </td>
+          <td class="memname">void netSockClose </td>
           <td>(</td>
-          <td class="paramtype">NetTelnet *&#160;</td>
-          <td class="paramname"><em>conn</em></td><td>)</td>
+          <td class="paramtype">NetSock *&#160;</td>
+          <td class="paramname"><em>sock</em></td><td>)</td>
           <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Flush data. Causes immediate sending of data that has been buffered. </p>
+<p>Close a connection. </p>
 
 </div>
 </div>
@@ -539,6 +522,50 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <p>Initialize telnet protocol state machine for given socket connection. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga6c1cf6102bb2618861e3404998c78ffd"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void telnetWrite </td>
+          <td>(</td>
+          <td class="paramtype">NetTelnet *&#160;</td>
+          <td class="paramname"><em>conn</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">char *&#160;</td>
+          <td class="paramname"><em>data</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Write data using telnet protocol. </p>
+
+</div>
+</div>
+<a class="anchor" id="gae2eb57255ef4a67efd00dc0ea0398d9d"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void telnetFlush </td>
+          <td>(</td>
+          <td class="paramtype">NetTelnet *&#160;</td>
+          <td class="paramname"><em>conn</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Flush data. Causes immediate sending of data that has been buffered. </p>
 
 </div>
 </div>
@@ -581,37 +608,10 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ga6c1cf6102bb2618861e3404998c78ffd"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">void telnetWrite </td>
-          <td>(</td>
-          <td class="paramtype">NetTelnet *&#160;</td>
-          <td class="paramname"><em>conn</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">char *&#160;</td>
-          <td class="paramname"><em>data</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Write data using telnet protocol. </p>
-
-</div>
-</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 11 2015 16:30:00 for picoos-net by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 26 2015 20:30:53 for picoos-net by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.9.1
 </small></address>

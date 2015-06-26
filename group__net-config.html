@@ -59,6 +59,49 @@ Macros</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <p>Configuration settings that are not related to uIP. </p>
 <h2 class="groupheader">Macro Definition Documentation</h2>
+<a class="anchor" id="ga079f9d178d52a7a19f5f9dc844d84533"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define NETCFG_SOCKETS&#160;&#160;&#160;1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Set to 1 to include socket layer. </p>
+
+</div>
+</div>
+<a class="anchor" id="gad07fd6360c82b47fe6217a6c4d67b7e3"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define NETCFG_TELNETD&#160;&#160;&#160;1</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Set to 1 to include telnet protocol. </p>
+
+</div>
+</div>
+<a class="anchor" id="ga791b544b31576698e41c430f97a19692"></a>
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define NETCFG_DRIVER_TAP&#160;&#160;&#160;2</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Unix TAP driver configuration.</p><ul>
+<li>0: Don't compile driver</li>
+<li>1: Compile driver</li>
+<li>2: Compile driver and use it as default for socket layer api. </li>
+</ul>
+
+</div>
+</div>
 <a class="anchor" id="ga3acacc239dd4794438b2e06545d6a8e6"></a>
 <div class="memitem">
 <div class="memproto">
@@ -93,53 +136,10 @@ Macros</h2></td></tr>
 
 </div>
 </div>
-<a class="anchor" id="ga791b544b31576698e41c430f97a19692"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define NETCFG_DRIVER_TAP&#160;&#160;&#160;2</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Unix TAP driver configuration.</p><ul>
-<li>0: Don't compile driver</li>
-<li>1: Compile driver</li>
-<li>2: Compile driver and use it as default for socket layer api. </li>
-</ul>
-
-</div>
-</div>
-<a class="anchor" id="ga079f9d178d52a7a19f5f9dc844d84533"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define NETCFG_SOCKETS&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Set to 1 to include socket layer. </p>
-
-</div>
-</div>
-<a class="anchor" id="gad07fd6360c82b47fe6217a6c4d67b7e3"></a>
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define NETCFG_TELNETD&#160;&#160;&#160;1</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
-<p>Set to 1 to include telnet protocol. </p>
-
-</div>
-</div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Thu Jun 11 2015 16:30:00 for picoos-net by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Jun 26 2015 20:30:53 for picoos-net by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.9.1
 </small></address>
