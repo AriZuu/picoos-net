@@ -43,7 +43,8 @@ TARGET = picoos-net
 CONTIKI_DIR = ../contiki-uip
 
 SRC_TXT_CONTIKI4 =	net/ipv4/uip.c	\
-			net/ipv4/uip_arp.c  
+			net/ipv4/uip_arp.c  \
+			net/ipv4/uip-neighbor.c  
 
 SRC_TXT_CONTIKI6 =	net/ipv6/uip6.c      \
 			net/ipv6/uip-icmp6.c \
@@ -58,6 +59,7 @@ SRC_TXT_CONTIKI =	net/ip/uip-debug.c \
 			net/ip/uip-split.c \
 			net/ip/tcpip.c     \
 			net/ip/uiplib.c    \
+			net/ip/uip-nameserver.c    \
 			lib/random.c	\
 		        lib/list.c	\
 		        lib/memb.c	\
@@ -66,11 +68,13 @@ SRC_HDR_CONTIKI     =   net/ip/uip-debug.h	\
 			net/ip/uip-split.h	\
 			net/ip/tcpip.h		\
 			net/ip/uiplib.h		\
+			net/ip/uip-nameserver.h		\
 			net/ip/uip_arch.h	\
 			net/ip/uipopt.h		\
 			net/ip/uip.h		\
 			net/ipv4/uip-fw.h	\
 			net/ipv4/uip_arp.h	\
+			net/ipv4/uip-neighbor.h	\
 			net/ipv6/uip-ds6-nbr.h	\
 			net/ipv6/uip-ds6-route.h	\
 			net/ipv6/uip-ds6.h	\
@@ -129,12 +133,20 @@ $(SRC_TXT_CONTIKI): %.c:	$(CONTIKI_DIR)/core/%.c
 $(SRC_HDR_CONTIKI): %.h:	$(CONTIKI_DIR)/core/%.h
 	cp $< $@
 
+$(SRC_TXT_CONTIKI4): %.c:	$(CONTIKI_DIR)/core/%.c
+	cp $< $@
+
+$(SRC_TXT_CONTIKI6): %.c:	$(CONTIKI_DIR)/core/%.c
+	cp $< $@
+
 endif
 
 include $(MAKE_LIB)
 
 changelog:
 	git log --date=short --format="%ad %ae %s" --date-order --follow .
+
+copyall: $(SRC_TXT_CONTIKI) $(SRC_HDR_CONTIKI) $(SRC_TXT_CONTIKI4) $(SRC_TXT_CONTIKI6)
 
 dox: doxygen.cfg
 	mkdir -p doc

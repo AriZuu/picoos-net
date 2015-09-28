@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Swedish Institute of Computer Science.
+ * Copyright (c) 2006, Swedish Institute of Computer Science.
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,66 +26,35 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
+ * This file is part of the Contiki operating system.
+ *
  */
 
 /**
  * \file
- *         A set of debugging tools
+ *         Header file for database of link-local neighbors, used by
+ *         IPv6 code and to be used by future ARP code.
  * \author
- *         Nicolas Tsiftes <nvt@sics.se>
- *         Niclas Finne <nfi@sics.se>
- *         Joakim Eriksson <joakime@sics.se>
+ *         Adam Dunkels <adam@sics.se>
  */
 
-#include "net/ip/uip-debug.h"
+#ifndef UIP_NEIGHBOR_H_
+#define UIP_NEIGHBOR_H_
 
-/*---------------------------------------------------------------------------*/
-void
-uip_debug_ipaddr_print(const uip_ipaddr_t *addr)
-{
-#if NETSTACK_CONF_WITH_IPV6
-  uint16_t a;
-  unsigned int i;
-  int f;
-#endif /* NETSTACK_CONF_WITH_IPV6 */
-  if(addr == NULL) {
-    PRINTA("(NULL IP addr)");
-    return;
-  }
-#if NETSTACK_CONF_WITH_IPV6
-  for(i = 0, f = 0; i < sizeof(uip_ipaddr_t); i += 2) {
-    a = (addr->u8[i] << 8) + addr->u8[i + 1];
-    if(a == 0 && f >= 0) {
-      if(f++ == 0) {
-        PRINTA("::");
-      }
-    } else {
-      if(f > 0) {
-        f = -1;
-      } else if(i > 0) {
-        PRINTA(":");
-      }
-      PRINTA("%x", a);
-    }
-  }
-#else /* NETSTACK_CONF_WITH_IPV6 */
-  PRINTA("%u.%u.%u.%u", addr->u8[0], addr->u8[1], addr->u8[2], addr->u8[3]);
-#endif /* NETSTACK_CONF_WITH_IPV6 */
-}
-/*---------------------------------------------------------------------------*/
-void
-uip_debug_lladdr_print(const uip_lladdr_t *addr)
-{
-  unsigned int i;
-  if(addr == NULL) {
-    PRINTA("(NULL LL addr)");
-    return;
-  }
-  for(i = 0; i < sizeof(uip_lladdr_t); i++) {
-    if(i > 0) {
-      PRINTA(":");
-    }
-    PRINTA("%02x", addr->addr[i]);
-  }
-}
-/*---------------------------------------------------------------------------*/
+#include "net/ip/uip.h"
+
+struct uip_neighbor_addr {
+#if UIP_NEIGHBOR_CONF_ADDRTYPE
+  UIP_NEIGHBOR_CONF_ADDRTYPE addr;
+#else
+  struct uip_eth_addr addr;
+#endif
+};
+
+void uip_neighbor_init(void);
+void uip_neighbor_add(uip_ipaddr_t *ipaddr, struct uip_neighbor_addr *addr);
+void uip_neighbor_update(uip_ipaddr_t *ipaddr);
+struct uip_neighbor_addr *uip_neighbor_lookup(uip_ipaddr_t *ipaddr);
+void uip_neighbor_periodic(void);
+
+#endif /* UIP-NEIGHBOR_H_ */

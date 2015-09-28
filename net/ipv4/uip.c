@@ -75,17 +75,10 @@
 #include "net/ipv4/uip_arp.h"
 #include "net/ip/uip_arch.h"
 
-#if !NETSTACK_CONF_WITH_IPV6 /* If NETSTACK_CONF_WITH_IPV6 is defined, we compile the
-		      uip6.c file instead of this one. Therefore
-		      this #ifndef removes the entire compilation
-		      output of the uip.c file */
-
-
-#if NETSTACK_CONF_WITH_IPV6
 #include "net/ipv4/uip-neighbor.h"
-#endif /* NETSTACK_CONF_WITH_IPV6 */
 
 #include <string.h>
+#include "sys/cc.h"
 
 /*---------------------------------------------------------------------------*/
 /* Variable definitions. */
@@ -400,7 +393,7 @@ uip_init(void)
 /*---------------------------------------------------------------------------*/
 #if UIP_ACTIVE_OPEN
 struct uip_conn *
-uip_connect(uip_ipaddr_t *ripaddr, uint16_t rport)
+uip_connect(const uip_ipaddr_t *ripaddr, uint16_t rport)
 {
   register struct uip_conn *conn, *cconn;
 
@@ -713,7 +706,7 @@ uip_process(uint8_t flag)
     }
     goto drop;
 
-    /* Check if we were invoked because of the perodic timer fireing. */
+    /* Check if we were invoked because of the periodic timer firing. */
   } else if(flag == UIP_TIMER) {
 #if UIP_REASSEMBLY
     if(uip_reasstmr != 0) {
@@ -865,7 +858,7 @@ uip_process(uint8_t flag)
      that the packet has been corrupted in transit. If the size of
      uip_len is larger than the size reported in the IP packet header,
      the packet has been padded and we set uip_len to the correct
-     value.. */
+     value. */
 
   if((BUF->len[0] << 8) + BUF->len[1] <= uip_len) {
     uip_len = (BUF->len[0] << 8) + BUF->len[1];
@@ -905,7 +898,7 @@ uip_process(uint8_t flag)
 
   if(uip_ipaddr_cmp(&uip_hostaddr, &uip_all_zeroes_addr)) {
     /* If we are configured to use ping IP address configuration and
-       hasn't been assigned an IP address yet, we accept all ICMP
+       haven't been assigned an IP address yet, we accept all ICMP
        packets. */
 #if UIP_PINGADDRCONF && !NETSTACK_CONF_WITH_IPV6
     if(BUF->proto == UIP_PROTO_ICMP) {
@@ -1269,7 +1262,7 @@ uip_process(uint8_t flag)
     }
   }
 
-  /* If we didn't find and active connection that expected the packet,
+  /* If we didn't find an active connection that expected the packet,
      either this packet is an old duplicate, or this is a SYN packet
      destined for a connection in LISTEN. If the SYN flag isn't set,
      it is an old packet and we send a RST. */
@@ -1458,7 +1451,7 @@ uip_process(uint8_t flag)
   uip_flags = 0;
   /* We do a very naive form of TCP reset processing; we just accept
      any RST and kill our connection. We should in fact check if the
-     sequence number of this reset is wihtin our advertised window
+     sequence number of this reset is within our advertised window
      before we accept the reset. */
   if(BUF->flags & TCP_RST) {
     uip_connr->tcpstateflags = UIP_CLOSED;
@@ -1979,7 +1972,6 @@ void
 uip_send(const void *data, int len)
 {
   int copylen;
-#define MIN(a,b) ((a) < (b)? (a): (b))
   copylen = MIN(len, UIP_BUFSIZE - UIP_LLH_LEN - UIP_TCPIP_HLEN -
 		(int)((char *)uip_sappdata - (char *)&uip_buf[UIP_LLH_LEN + UIP_TCPIP_HLEN]));
   if(copylen > 0) {
@@ -1990,6 +1982,4 @@ uip_send(const void *data, int len)
   }
 }
 /*---------------------------------------------------------------------------*/
-#endif /* NETSTACK_CONF_WITH_IPV6 */
-
 /** @}*/
