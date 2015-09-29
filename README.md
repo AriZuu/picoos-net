@@ -2,7 +2,7 @@ uIP for pico]OS
 ===============
 
 This is a uIP-based network stack for pico]OS.
-It is currently based on version 2.7 of [contiki][3].
+It is currently based on version 3.0 of [contiki][3].
 Support for both IPv4 and ipV6 is included.
 
 In addition to standard uIP stack library includes two
