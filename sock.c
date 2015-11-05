@@ -174,7 +174,7 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
     tcp = uip_connect(ip, uip_htons(port));
     if (tcp == NULL) {
 
-      posMutexUnlock(sock->mutex);
+      posMutexUnlock(uipMutex);
       return -1;
     }
 
@@ -208,7 +208,7 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
     udp = uip_udp_new(ip, uip_htons(port));
     if (udp == NULL) {
 
-      posMutexUnlock(sock->mutex);
+      posMutexUnlock(uipMutex);
       return -1;
     }
 
@@ -544,15 +544,16 @@ void netTcpAppcall()
         posMutexUnlock(listenSock->mutex);
       }
     }
-
-    if (sock->state == NET_SOCK_CONNECT) {
+    else {
 
       sock = uip_conn->appstate.sock;
+      if (sock->state == NET_SOCK_CONNECT) {
 
-      posMutexLock(sock->mutex);
-      sock->state = NET_SOCK_ACCEPTED;
-      posFlagSet(sock->uipChange, 1);
-      posMutexUnlock(sock->mutex);
+        posMutexLock(sock->mutex);
+        sock->state = NET_SOCK_CONNECT_OK;
+        posFlagSet(sock->uipChange, 1);
+        posMutexUnlock(sock->mutex);
+      }
     }
   }
 
