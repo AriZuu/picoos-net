@@ -171,55 +171,43 @@ void netEnableDevicePolling(UINT_t ticks);
 void netInit(void);
 
 /**
- * Get socket table slot number for given socket. Used
- * by BSD socket layer to convert socket pointer to 
- * socket descriptor number.
- */
-int netSockSlot(NetSock* sock);
-
-/**
- * Get NetSock* pointer for given connection slot.
- */
-NetSock* netSockConnection(int slot);
-
-/**
  * Allocate a new socket descriptor by searching
  * for a free one in socket table.
  */
-NetSock* netSockAlloc(NetSockState initialState);
+UosFile* netSockAlloc(NetSockState initialState);
 
 /**
  * Free a new socket descriptor.
  */
-void netSockFree(NetSock* sock);
+void netSockFree(UosFile* sock);
 
 /**
  * Create new UDP socket. This is the same as
  * netSockUdpCreate() in previous versions.
  */
-NetSock* netSockCreateUDP(uip_ipaddr_t* ip, int port);
+UosFile* netSockCreateUDP(uip_ipaddr_t* ip, int port);
 
 /**
  * Create a server socket, for listening incoming connections.
  * This is same as netSockServerCreate in previous versions.
  */
-NetSock* netSockCreateTCPServer(int port);
+UosFile* netSockCreateTCPServer(int port);
 
 /**
  * Bind server socket to given port before listening on it.
  */
-int netSockBind(NetSock* sock, int port);
+int netSockBind(UosFile* sock, int port);
 
 /**
  * Start listening for incoming connections.
  * Port is set during netSockServerCreate().
  */
-void netSockListen(NetSock* sock);
+void netSockListen(UosFile* sock);
 
 /**
  * Accept new incoming connection.
  */
-NetSock* netSockAccept(NetSock* listenSocket, uip_ipaddr_t* peer);
+UosFile* netSockAccept(UosFile* listenSocket, uip_ipaddr_t* peer);
 
 #if UIP_ACTIVE_OPEN == 1 || DOX == 1
 
@@ -227,7 +215,7 @@ NetSock* netSockAccept(NetSock* listenSocket, uip_ipaddr_t* peer);
  * Create new client connection to given IP address and port.
  * This replaces netSockConnect call in previous library versions.
  */
-NetSock* netSockCreateTCP(uip_ipaddr_t* ip, int port);
+UosFile* netSockCreateTCP(uip_ipaddr_t* ip, int port);
 
 #endif
 
@@ -236,7 +224,7 @@ NetSock* netSockCreateTCP(uip_ipaddr_t* ip, int port);
  * This works like BSD connect() now. To get functionality
  * similar to previous library versions, use netSockCrateTCP().
  */
-int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port);
+int netSockConnect(UosFile* sock, uip_ipaddr_t* ip, int port);
 /**
  * Set **accept hook** function to handling incoming connections.
  * After accept hook is called by main loop it is responsible
@@ -250,25 +238,20 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port);
 void netSockAcceptHookSet(NetSockAcceptHook hook);
 
 /**
+ * Set read timeout for socket.
+ */
+int netSockTimeout(UosFile* sock, UINT_t timeout);
+
+/**
  * Read data from socket. Similar to unix *read()*.
  * Function blocks until data is available.
  */
-int netSockRead(NetSock* sock, void* data, uint16_t max, uint16_t timeout);
+int netSockRead(UosFile* sock, void* data, uint16_t max, uint16_t timeout);
 
 /**
  * Read a line (terminated by CR or NL) from socket.
  */
-int netSockReadLine(NetSock* sock, void* data, uint16_t max, uint16_t timeout);
-
-/**
- * Write data to socket.
- */
-int netSockWrite(NetSock* sock, const void* data, uint16_t len);
-
-/**
- * Close a connection.
- */
-void netSockClose(NetSock* sock);
+int netSockReadLine(UosFile* sock, void* data, uint16_t max, uint16_t timeout);
 
 /*
  * Main thread.

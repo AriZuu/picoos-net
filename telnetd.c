@@ -30,6 +30,7 @@
  */
 
 #include <picoos.h>
+#include <picoos-u.h>
 #include <picoos-net.h>
 #include <string.h>
 #include "sys/socket.h"

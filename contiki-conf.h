@@ -32,6 +32,7 @@
 #define _CONTIKI_CONF_H
 
 #include <picoos.h>
+#include <picoos-u.h>
 #include <stdbool.h>
 #include <inttypes.h>
 
@@ -123,16 +124,16 @@ struct netSock {
   };
 };
 
-typedef struct netSock volatile NetSock;
+typedef struct netSock NetSock;
 
 struct netSockState {
 
-  NetSock* sock;
+  UosFile* file;
 };
 
 typedef struct netSockState uip_tcp_appstate_t;
 typedef struct netSockState uip_udp_appstate_t;
-typedef int (*NetSockAcceptHook)(NetSock* sock, int port);
+typedef int (*NetSockAcceptHook)(UosFile* sock, int port);
 
 #define UIP_APPCALL netTcpAppcall
 void netTcpAppcall(void);

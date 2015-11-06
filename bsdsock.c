@@ -29,16 +29,13 @@
  */
 
 #include <picoos.h>
+#include <picoos-u.h>
 #include <picoos-net.h>
 #include <sys/socket.h>
 #include <string.h>
 #include <net/ip/uiplib.h>
 
 #if NETCFG_BSD_SOCKETS == 1
-
-#define	SOCKET_FREE       ((void*)0)
-#define SOCKET_UNDEF_TCP  ((void*)1)
-#define SOCKET_UNDEF_UDP  ((void*)2)
 
 #if NETSTACK_CONF_WITH_IPV6
 #define SOCKADDR2UIP(sa) (&(((struct sockaddr_in6*)sa)->sin6_addr.un.uip))
@@ -50,7 +47,7 @@
 
 int net_socket(int domain, int type, int protocol)
 {
-  NetSock* sock;
+  UosFile* sock;
 
   if (type == SOCK_STREAM)
     sock = netSockAlloc(NET_SOCK_UNDEF_TCP);
@@ -61,25 +58,25 @@ int net_socket(int domain, int type, int protocol)
     return -1; // Bad socket type
   }
 
-  return netSockSlot(sock);
+  return uosFileSlot(sock);
 }
 
 int net_close(int s)
 {
-  netSockClose(netSockConnection(s));
+  uosFileClose(uosFile(s));
   return 0;
 }
 
 int net_connect(int s, const struct sockaddr *name, socklen_t namelen)
 {
-  return netSockConnect(netSockConnection(s), SOCKADDR2UIP(name), uip_ntohs(SOCKADDR2PORT(name)));
+  return netSockConnect(uosFile(s), SOCKADDR2UIP(name), uip_ntohs(SOCKADDR2PORT(name)));
 }
 
 int net_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
-  NetSock* sock;
+  UosFile* sock;
 
-  sock = netSockAccept(netSockConnection(s), SOCKADDR2UIP(addr));
+  sock = netSockAccept(uosFile(s), SOCKADDR2UIP(addr));
   if (sock == NULL)
     return -1;
 
@@ -89,17 +86,17 @@ int net_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
   *addrlen = sizeof(struct sockaddr_in);
 #endif
 
-  return netSockSlot(sock);
+  return uosFileSlot(sock);
 }
 
 int net_bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
-  return netSockBind(netSockConnection(s), uip_ntohs(SOCKADDR2PORT(name)));
+  return netSockBind(uosFile(s), uip_ntohs(SOCKADDR2PORT(name)));
 }
 
 int net_listen(int s, int backlog)
 {
-  netSockListen(netSockConnection(s));
+  netSockListen(uosFile(s));
   return 0;
 }
 
@@ -110,18 +107,16 @@ int net_getsockopt (int s, int level, int optname, void *optval, socklen_t *optl
 
 int net_setsockopt (int s, int level, int optname, const void *optval, socklen_t optlen)
 {
-  NetSock* sock = netSockConnection(s);
-
-  P_ASSERT("net_close", (sock != SOCKET_FREE && sock != SOCKET_UNDEF_TCP && sock != SOCKET_UNDEF_UDP));
+  UosFile* file = uosFile(s);
 
   if (optname == SO_RCVTIMEO) {
 
     const struct timeval* tv = optval;
 
     if (tv->tv_sec == 0 && tv->tv_usec == 0)
-      sock->timeout = INFINITE;
+      netSockTimeout(file, INFINITE);
     else
-      sock->timeout = MS(tv->tv_sec * 1000 + tv->tv_usec / 1000);
+      netSockTimeout(file, MS(tv->tv_sec * 1000 + tv->tv_usec / 1000));
 
     return 0;
   }
@@ -131,11 +126,10 @@ int net_setsockopt (int s, int level, int optname, const void *optval, socklen_t
 
 int net_recv(int s, void *dataptr, size_t size, int flags)
 {
-  NetSock* sock = netSockConnection(s);
+  UosFile* sock = uosFile(s);
   int len;
 
-  P_ASSERT("net_close", (sock != SOCKET_FREE && sock != SOCKET_UNDEF_TCP && sock != SOCKET_UNDEF_UDP));
-  len = netSockRead(sock, dataptr, size, sock->timeout);
+  len = uosFileRead(sock, dataptr, size);
   if (len == NET_SOCK_EOF)
     return 0;
 
@@ -147,10 +141,9 @@ int net_recv(int s, void *dataptr, size_t size, int flags)
 
 int net_send(int s, const void *dataptr, size_t size, int flags)
 {
-  NetSock* sock = netSockConnection(s);
+  UosFile* sock = uosFile(s);
 
-  P_ASSERT("net_close", (sock != SOCKET_FREE && sock != SOCKET_UNDEF_TCP && sock != SOCKET_UNDEF_UDP));
-  if (netSockWrite(sock, dataptr, size) < (int)size)
+  if (uosFileWrite(sock, dataptr, size) < (int)size)
     return -1;
 
   return size;

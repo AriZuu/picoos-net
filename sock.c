@@ -29,9 +29,14 @@
  */
 
 #include <picoos.h>
+#include <picoos-u.h>
 #include <picoos-net.h>
 #include <string.h>
 #include <net/ip/uip-split.h>
+
+#if !defined(UOSCFG_MAX_OPEN_FILES) || UOSCFG_MAX_OPEN_FILES == 0
+#error UOSCFG_MAX_OPEN_FILES must be > 0
+#endif
 
 #ifndef NETCFG_STACK_SIZE
 #define NETCFG_STACK_SIZE 500
@@ -55,48 +60,57 @@ static volatile int dataToSend = 0;
 static NetSockAcceptHook acceptHook = NULL;
 static volatile UINT_t pollTicks;
 
+typedef struct {
+
+  UosFS base;
+
+} NetFS;
+
 #define SOCK_TABSIZE (UIP_CONF_MAX_CONNECTIONS + UIP_CONF_UDP_CONNS + UIP_LISTENPORTS)
-NetSock netSocketTable[SOCK_TABSIZE];
+UOS_BITTAB_TABLE(NetSock, SOCK_TABSIZE);
 
-int netSockSlot(NetSock* sock)
+static NetSockBittab netSocketTable;
+static NetFS netFS;
+
+static int sockInit(const UosFS*);
+static int sockClose(UosFile* file);
+static int sockRead(UosFile* file, char* buf, int max);
+static int sockWrite(UosFile* file, const char* buf, int max);
+
+static const UosFS_I netFS_I = {
+  
+  .init   = sockInit,
+};
+
+static const UosFile_I netSock_I = {
+
+  .close  = sockClose,
+  .read   = sockRead,
+  .write  = sockWrite
+};
+
+static int sockInit(const UosFS* fs)
 {
-  if (sock == NULL)
-    return -1;
-
-  return sock - netSocketTable;
+  return 0;
 }
 
-NetSock* netSockConnection(int s)
+UosFile* netSockAlloc(NetSockState initialState)
 {
-  NetSock* sock;
+  int      slot;
 
-  sock = netSocketTable + s;
-  if (sock == NET_SOCK_NULL)
-    sock = NULL;
+  UosFile* file = uosFileAlloc();
+  if (file == NULL)
+    return NULL;
 
-  return sock;
-}
+  slot = UOS_BITTAB_ALLOC(netSocketTable);
+  if (slot == -1) {
 
-NetSock* netSockAlloc(NetSockState initialState)
-{
-  int      i;
-  NetSock* sock;
-
-  // Ensure that this is the only task which manipulates socket table.
-  posMutexLock(uipMutex);
-
-  // Find free socket descriptor
-  sock = netSocketTable;
-  for (i = 0; i < SOCK_TABSIZE; i++, sock++)
-    if (sock->state == NET_SOCK_NULL)
-      break;
-
-  if (i >= SOCK_TABSIZE) {
-
-    posMutexUnlock(uipMutex);
-    return NULL; // No free sockets
+    uosFileFree(file);
+    nosPrintf("netSockAlloc: table full\n");
+    return NULL;
   }
 
+  NetSock* sock = UOS_BITTAB_ELEM(netSocketTable, slot);
   sock->state = initialState;
   sock->mutex = posMutexCreate();
   sock->sockChange = posFlagCreate();
@@ -106,58 +120,64 @@ NetSock* netSockAlloc(NetSockState initialState)
   sock->len = 0;
   sock->max = 0;
 
-  P_ASSERT("netSockInit", sock->mutex != NULL && sock->sockChange != NULL && sock->uipChange != NULL);
+  P_ASSERT("netSockAlloc", sock->mutex != NULL && sock->sockChange != NULL && sock->uipChange != NULL);
 
   POS_SETEVENTNAME(sock->mutex, "sock:mutex");
   POS_SETEVENTNAME(sock->sockChange, "sock:api");
   POS_SETEVENTNAME(sock->uipChange, "sock:uip");
 
-  posMutexUnlock(uipMutex);
-  return sock;
+  file->fs     = &netFS.base;
+  file->i      = &netSock_I;
+  file->fsPriv = sock;
+
+  return file;
 }
 
 #if UIP_ACTIVE_OPEN == 1
-NetSock* netSockCreateTCP(uip_ipaddr_t* ip, int port)
+UosFile* netSockCreateTCP(uip_ipaddr_t* ip, int port)
 {
-  NetSock* sock;
+  UosFile* file;
 
-  sock = netSockAlloc(NET_SOCK_UNDEF_TCP);
-  if (sock == NULL)
+  file = netSockAlloc(NET_SOCK_UNDEF_TCP);
+  if (file == NULL)
     return NULL;
 
-  if (netSockConnect(sock, ip, port) == -1) {
+  if (netSockConnect(file, ip, port) == -1) {
 
-    netSockFree(sock);
+    netSockFree(file);
     return NULL;
   }
 
-  return sock;
+  return file;
 }
 #endif
 
 #if UIP_CONF_UDP == 1
-NetSock* netSockCreateUDP(uip_ipaddr_t* ip, int port)
+UosFile* netSockCreateUDP(uip_ipaddr_t* ip, int port)
 {
-  NetSock* sock;
+  UosFile* file;
 
-  sock = netSockAlloc(NET_SOCK_UNDEF_UDP);
-  if (sock == NULL)
+  file = netSockAlloc(NET_SOCK_UNDEF_UDP);
+  if (file == NULL)
     return NULL;
 
-  if (netSockConnect(sock, ip, port) == -1) {
+  if (netSockConnect(file, ip, port) == -1) {
 
-    netSockFree(sock);
+    netSockFree(file);
     return NULL;
   }
 
-  return sock;
+  return file;
 }
 #endif
 
-int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
+int netSockConnect(UosFile* file, uip_ipaddr_t* ip, int port)
 {
   struct uip_conn* tcp;
   struct uip_udp_conn* udp;
+
+  P_ASSERT("netSockConnect", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
 
 #if UIP_ACTIVE_OPEN == 1
   P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_TCP || sock->state == NET_SOCK_UNDEF_UDP ||
@@ -178,7 +198,7 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
       return -1;
     }
 
-    tcp->appstate.sock = sock;
+    tcp->appstate.file = file;
 
     posMutexLock(sock->mutex);
     sock->state = NET_SOCK_CONNECT;
@@ -194,7 +214,7 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
     if (sock->state == NET_SOCK_PEER_CLOSED || sock->state == NET_SOCK_PEER_ABORTED) {
   
       posMutexUnlock(sock->mutex);
-      netSockClose(sock);
+      uosFileClose(file);
       return -1;
     }
 
@@ -214,7 +234,7 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
       return -1;
     }
 
-    udp->appstate.sock = sock;
+    udp->appstate.file = file;
     if (sock->state == NET_SOCK_BOUND_UDP)
       uip_udp_bind(udp, sock->port);
 
@@ -231,25 +251,28 @@ void netSockAcceptHookSet(NetSockAcceptHook hook)
   acceptHook = hook;
 }
 
-NetSock* netSockCreateTCPServer(int port)
+UosFile* netSockCreateTCPServer(int port)
 {
-  NetSock* sock;
+  UosFile* file;
 
-  sock = netSockAlloc(NET_SOCK_UNDEF_TCP);
-  if (sock == NULL)
+  file = netSockAlloc(NET_SOCK_UNDEF_TCP);
+  if (file == NULL)
     return NULL;
 
-  if (netSockBind(sock, port) == -1) {
+  if (netSockBind(file, port) == -1) {
  
-    netSockFree(sock);
+    netSockFree(file);
     return NULL;
   }
 
-  return sock;
+  return file;
 }
 
-int netSockBind(NetSock* sock, int port)
+int netSockBind(UosFile* file, int port)
 {
+  P_ASSERT("netSockBind", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
+
 #if UIP_ACTIVE_OPEN == 1
   P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_TCP || sock->state == NET_SOCK_UNDEF_UDP));
 #else
@@ -262,8 +285,11 @@ int netSockBind(NetSock* sock, int port)
   return 0;
 }
 
-void netSockListen(NetSock* sock)
+void netSockListen(UosFile* file)
 {
+  P_ASSERT("netSockListen", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
+
   posMutexLock(sock->mutex);
   sock->state = NET_SOCK_LISTENING;
   posMutexUnlock(sock->mutex);
@@ -273,9 +299,12 @@ void netSockListen(NetSock* sock)
   posMutexUnlock(uipMutex);
 }
 
-NetSock* netSockAccept(NetSock* listenSock, uip_ipaddr_t* peer)
+UosFile* netSockAccept(UosFile* listenSockFile, uip_ipaddr_t* peer)
 {
-  NetSock* sock;
+  UosFile* file;
+
+  P_ASSERT("netSockAccept", listenSockFile->fs->i == &netFS_I);
+  NetSock* listenSock = (NetSock*)listenSockFile->fsPriv;
 
   posMutexLock(listenSock->mutex);
 
@@ -294,16 +323,16 @@ NetSock* netSockAccept(NetSock* listenSock, uip_ipaddr_t* peer)
   P_ASSERT("sockAccept", listenSock->state == NET_SOCK_ACCEPTED);
 
   uip_ipaddr_copy(peer, &listenSock->newConnection->ripaddr);
-  sock = listenSock->newConnection->appstate.sock;
+  file = listenSock->newConnection->appstate.file;
   listenSock->newConnection = NULL;
   listenSock->state = NET_SOCK_LISTENING;
 
   posMutexUnlock(listenSock->mutex);
 
-  return sock;
+  return file;
 }
 
-static int sockRead(NetSock* sock, NetSockState state, void* data, uint16_t max, uint16_t timeout)
+static int sockReadInternal(NetSock* sock, NetSockState state, void* data, uint16_t max, uint16_t timeout)
 {
   int len;
   bool timedOut = false;
@@ -358,18 +387,44 @@ static int sockRead(NetSock* sock, NetSockState state, void* data, uint16_t max,
   return len;
 }
 
-int netSockRead(NetSock* sock, void* data, uint16_t max, uint16_t timeout)
+static int sockRead(UosFile* file, char* buf, int max)
 {
-  return sockRead(sock, NET_SOCK_READING, data, max, timeout);
+  P_ASSERT("netSockRead", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
+
+  return netSockRead(file, buf, max, sock->timeout);
 }
 
-int netSockReadLine(NetSock* sock, void* data, uint16_t max, uint16_t timeout)
+int netSockTimeout(UosFile* file, UINT_t timeout)
 {
-  return sockRead(sock, NET_SOCK_READING_LINE, data, max, timeout);
+  P_ASSERT("netSockTimeout", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
+
+  sock->timeout = timeout;
+  return 0;
 }
 
-int netSockWrite(NetSock* sock, const void* data, uint16_t len)
+int netSockRead(UosFile* file, void* data, uint16_t max, uint16_t timeout)
 {
+  P_ASSERT("netSockRead", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
+
+  return sockReadInternal(sock, NET_SOCK_READING, data, max, timeout);
+}
+
+int netSockReadLine(UosFile* file, void* data, uint16_t max, uint16_t timeout)
+{
+  P_ASSERT("netSockReadLine", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
+
+  return sockReadInternal(sock, NET_SOCK_READING_LINE, data, max, timeout);
+}
+
+static int sockWrite(UosFile* file, const char* data, int len)
+{
+  P_ASSERT("sockWrite", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
+
   posMutexLock(sock->mutex);
 
   if (sock->state == NET_SOCK_PEER_CLOSED) {
@@ -416,8 +471,11 @@ int netSockWrite(NetSock* sock, const void* data, uint16_t len)
   return len;
 }
 
-void netSockFree(NetSock* sock)
+void netSockFree(UosFile* file)
 {
+  P_ASSERT("sockWrite", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
+
   posMutexDestroy(sock->mutex);
   posFlagDestroy(sock->sockChange);
   posFlagDestroy(sock->uipChange);
@@ -426,10 +484,15 @@ void netSockFree(NetSock* sock)
   sock->uipChange = NULL;
 
   sock->state = NET_SOCK_NULL;
+
+  uosFileFree(file);
 }
 
-void netSockClose(NetSock* sock)
+static int sockClose(UosFile* file)
 {
+  P_ASSERT("sockWrite", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
+
   posMutexLock(sock->mutex);
 
   if (sock->state == NET_SOCK_BUSY) {
@@ -461,34 +524,35 @@ void netSockClose(NetSock* sock)
                           sock->state == NET_SOCK_PEER_ABORTED || 
                           sock->state == NET_SOCK_CLOSE_OK));
 
-  netSockFree(sock);
+  netSockFree(file);
+  return 0;
 }
 
 static void netTcpAppcallMutex(NetSock* sock);
 
 void netTcpAppcall()
 {
-  NetSock *sock = NULL;
+  UosFile *file = NULL;
 
   if (uip_connected()) {
     
-    if (uip_conn->appstate.sock == NULL) {
+    if (uip_conn->appstate.file == NULL) {
 
       if (acceptHook != NULL) {
 
-        sock = netSockAlloc(NET_SOCK_BUSY);
-        if (sock == NULL) {
+        file = netSockAlloc(NET_SOCK_BUSY);
+        if (file == NULL) {
 
           uip_abort();
           return;
         }
 
-        uip_conn->appstate.sock = sock;
+        uip_conn->appstate.file = file;
 
-        if ((*acceptHook)(sock, uip_ntohs(uip_conn->lport)) == -1) {
+        if ((*acceptHook)(file, uip_ntohs(uip_conn->lport)) == -1) {
 
-          netSockFree(sock);
-          uip_conn->appstate.sock = NULL;
+          netSockFree(file);
+          uip_conn->appstate.file = NULL;
           uip_abort();
           return;
         }
@@ -499,13 +563,18 @@ void netTcpAppcall()
         int i;
         NetSock* listenSock;
 
-        listenSock = netSocketTable;
-        for (i = 0; i < SOCK_TABSIZE; i++, listenSock++)
+        for (i = 0; i < SOCK_TABSIZE; i++, listenSock++) {
+
+          if (UOS_BITTAB_IS_FREE(netSocketTable, i))
+            continue;
+
+          listenSock = UOS_BITTAB_ELEM(netSocketTable, i);
           if ((listenSock->state == NET_SOCK_LISTENING ||
               listenSock->state == NET_SOCK_ACCEPTING ||
               listenSock->state == NET_SOCK_ACCEPTED) &&
               listenSock->port == uip_conn->lport)
             break;
+        }
 
         if (i >= SOCK_TABSIZE) {
 
@@ -530,15 +599,15 @@ void netTcpAppcall()
           return;
         }
 
-        sock = netSockAlloc(NET_SOCK_BUSY);
-        if (sock == NULL) {
+        file = netSockAlloc(NET_SOCK_BUSY);
+        if (file == NULL) {
       
           uip_abort();
           posMutexUnlock(listenSock->mutex);
           return;
         }
 
-        uip_conn->appstate.sock = sock;
+        uip_conn->appstate.file = file;
         listenSock->newConnection = uip_conn;
         listenSock->state = NET_SOCK_ACCEPTED;
 
@@ -548,7 +617,11 @@ void netTcpAppcall()
     }
     else {
 
-      sock = uip_conn->appstate.sock;
+      file = uip_conn->appstate.file;
+
+      P_ASSERT("netTcpAppcall", file->fs->i == &netFS_I);
+      NetSock* sock = (NetSock*)file->fsPriv;
+
       if (sock->state == NET_SOCK_CONNECT) {
 
         posMutexLock(sock->mutex);
@@ -559,13 +632,16 @@ void netTcpAppcall()
     }
   }
 
-  sock = uip_conn->appstate.sock;
+  file = uip_conn->appstate.file;
 
   // Check if connection is related to socket.
   // If not, the socket has already been closed and
   // there is nothing more to do.
-  if (sock == NULL)
+  if (file == NULL)
      return;
+
+  P_ASSERT("netTcpAppcall", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
 
   posMutexLock(sock->mutex);
   netTcpAppcallMutex(sock);
@@ -575,7 +651,7 @@ void netTcpAppcall()
 
 static void netAppcallClose(NetSock* sock, NetSockState nextState)
 {
-  uip_conn->appstate.sock = NULL;
+  uip_conn->appstate.file = NULL;
   sock->state = nextState;
   posFlagSet(sock->uipChange, 0);
 }
@@ -709,8 +785,11 @@ static void netUdpAppcallMutex(NetSock* sock);
 
 void netUdpAppcall()
 {
-  NetSock *sock;
-  sock = uip_udp_conn->appstate.sock;
+  UosFile *file;
+  file = uip_udp_conn->appstate.file;
+
+  P_ASSERT("netUdpAppcall", file->fs->i == &netFS_I);
+  NetSock* sock = (NetSock*)file->fsPriv;
 
   if (sock->mutex == NULL) {
 
@@ -783,19 +862,25 @@ void netInit()
   POS_SETEVENTNAME(uipGiant, "uip:giant");
   POS_SETEVENTNAME(uipMutex, "uip:mutex");
 
+// uosFS setup
+
+  netFS.base.mountPoint = "/socket";
+  netFS.base.i = &netFS_I;
+ 
+  uosMount(&netFS.base);
+  
 // Initialize contiki-style timers (used by uip code)
 
   etimer_init();
 
   dataToSend = 0;
-  memset((void*)netSocketTable, '\0', sizeof (netSocketTable));
 
   for(i = 0; i < UIP_CONNS; i++)
-    uip_conns[i].appstate.sock = NULL;
+    uip_conns[i].appstate.file = NULL;
 
 #if UIP_UDP
   for(i = 0; i < UIP_UDP_CONNS; i++)
-    uip_udp_conns[i].appstate.sock = NULL;
+    uip_udp_conns[i].appstate.file = NULL;
 #endif /* UIP_UDP */
 
   netInterfaceInit();

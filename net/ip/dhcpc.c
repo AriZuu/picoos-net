@@ -179,7 +179,7 @@ send_discover(void)
   end = add_req_options(end);
   end = add_end(end);
 
-  netSockWrite(s.conn, (void*)m, end - (uint8_t*)m);
+  uosFileWrite(s.conn, (void*)m, end - (uint8_t*)m);
 }
 /*---------------------------------------------------------------------------*/
 static void
@@ -195,7 +195,7 @@ send_request(void)
   end = add_req_ipaddr(end);
   end = add_end(end);
   
-  netSockWrite(s.conn, (void*)m, end - (uint8_t*)m);
+  uosFileWrite(s.conn, (void*)m, end - (uint8_t*)m);
 }
 /*---------------------------------------------------------------------------*/
 static uint8_t

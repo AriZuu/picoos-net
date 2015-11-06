@@ -33,7 +33,7 @@
 struct dhcpc_state {
   POSTASK_t task;
   char state;
-  NetSock* conn;
+  UosFile* conn;
   const void *mac_addr;
   int mac_len;
   
