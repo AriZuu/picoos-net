@@ -166,11 +166,11 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
   P_ASSERT("sockConnect", (sock->state == NET_SOCK_UNDEF_UDP || NET_SOCK_BOUND_UDP));
 #endif
 
-  posMutexLock(uipMutex);
-
   if (sock->state == NET_SOCK_UNDEF_TCP)  {
 
 #if UIP_ACTIVE_OPEN == 1
+
+    posMutexLock(uipMutex);
     tcp = uip_connect(ip, uip_htons(port));
     if (tcp == NULL) {
 
@@ -205,6 +205,8 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
   else {
 
 #if UIP_CONF_UDP == 1
+
+    posMutexLock(uipMutex);
     udp = uip_udp_new(ip, uip_htons(port));
     if (udp == NULL) {
 
@@ -217,10 +219,10 @@ int netSockConnect(NetSock* sock, uip_ipaddr_t* ip, int port)
       uip_udp_bind(udp, sock->port);
 
     sock->state = NET_SOCK_BUSY;
+    posMutexUnlock(uipMutex);
 #endif
   }
 
-  posMutexUnlock(uipMutex);
   return 0;
 }
 
