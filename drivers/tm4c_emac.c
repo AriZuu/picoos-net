@@ -55,6 +55,7 @@
 
 #if NETCFG_DRIVER_TM4C1294 > 0
 
+#include <port_irq.h>
 #include "inc/hw_emac.h"
 #include "inc/hw_ints.h"
 #include "inc/hw_memmap.h"
