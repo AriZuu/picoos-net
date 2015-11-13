@@ -96,7 +96,7 @@ SRC_TXT =		sock.c \
 			sys/etimer.c	\
 			sys/ctimer.c	\
 			sys/clock.c	\
-			net/dhcpc.c	\
+			net/ip/dhcpc.c	\
 			$(SRC_TXT_CONTIKI)
 
 ifeq '$(strip $(NETCFG_STACK))' '6'
