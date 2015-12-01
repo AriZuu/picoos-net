@@ -36,6 +36,7 @@
 #include <picoos.h>
 #include <picoos-net.h>
 #include <string.h>
+#include <port_irq.h>
 
 #if NETCFG_DRIVER_HDLC_BRIDGE > 0
 
