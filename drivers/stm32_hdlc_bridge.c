@@ -36,10 +36,10 @@
 #include <picoos.h>
 #include <picoos-net.h>
 #include <string.h>
-#include <port_irq.h>
 
 #if NETCFG_DRIVER_HDLC_BRIDGE > 0
 
+#include <port_irq.h>
 #include "stm32_hdlc_bridge.h"
 #include "ppp_defs.h"
 #include "ppp_frame.h"
