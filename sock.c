@@ -77,12 +77,12 @@ static int sockClose(UosFile* file);
 static int sockRead(UosFile* file, char* buf, int max);
 static int sockWrite(UosFile* file, const char* buf, int max);
 
-static const UosFS_I netFS_I = {
+static const UosFSConf netFSConf = {
   
   .init   = sockInit,
 };
 
-static const UosFile_I netSock_I = {
+static const UosFileConf netSockConf = {
 
   .close  = sockClose,
   .read   = sockRead,
@@ -127,7 +127,7 @@ UosFile* netSockAlloc(NetSockState initialState)
   POS_SETEVENTNAME(sock->uipChange, "sock:uip");
 
   file->fs     = &netFS.base;
-  file->i      = &netSock_I;
+  file->cf     = &netSockConf;
   file->fsPriv = sock;
 
   return file;
@@ -176,7 +176,7 @@ int netSockConnect(UosFile* file, uip_ipaddr_t* ip, int port)
   struct uip_conn* tcp;
   struct uip_udp_conn* udp;
 
-  P_ASSERT("netSockConnect", file->fs->i == &netFS_I);
+  P_ASSERT("netSockConnect", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
 #if UIP_ACTIVE_OPEN == 1
@@ -270,7 +270,7 @@ UosFile* netSockCreateTCPServer(int port)
 
 int netSockBind(UosFile* file, int port)
 {
-  P_ASSERT("netSockBind", file->fs->i == &netFS_I);
+  P_ASSERT("netSockBind", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
 #if UIP_ACTIVE_OPEN == 1
@@ -287,7 +287,7 @@ int netSockBind(UosFile* file, int port)
 
 void netSockListen(UosFile* file)
 {
-  P_ASSERT("netSockListen", file->fs->i == &netFS_I);
+  P_ASSERT("netSockListen", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
   posMutexLock(sock->mutex);
@@ -303,7 +303,7 @@ UosFile* netSockAccept(UosFile* listenSockFile, uip_ipaddr_t* peer)
 {
   UosFile* file;
 
-  P_ASSERT("netSockAccept", listenSockFile->fs->i == &netFS_I);
+  P_ASSERT("netSockAccept", listenSockFile->fs->cf == &netFSConf);
   NetSock* listenSock = (NetSock*)listenSockFile->fsPriv;
 
   posMutexLock(listenSock->mutex);
@@ -389,7 +389,7 @@ static int sockReadInternal(NetSock* sock, NetSockState state, void* data, uint1
 
 static int sockRead(UosFile* file, char* buf, int max)
 {
-  P_ASSERT("netSockRead", file->fs->i == &netFS_I);
+  P_ASSERT("netSockRead", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
   return netSockRead(file, buf, max, sock->timeout);
@@ -397,7 +397,7 @@ static int sockRead(UosFile* file, char* buf, int max)
 
 int netSockTimeout(UosFile* file, UINT_t timeout)
 {
-  P_ASSERT("netSockTimeout", file->fs->i == &netFS_I);
+  P_ASSERT("netSockTimeout", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
   sock->timeout = timeout;
@@ -406,7 +406,7 @@ int netSockTimeout(UosFile* file, UINT_t timeout)
 
 int netSockRead(UosFile* file, void* data, uint16_t max, uint16_t timeout)
 {
-  P_ASSERT("netSockRead", file->fs->i == &netFS_I);
+  P_ASSERT("netSockRead", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
   return sockReadInternal(sock, NET_SOCK_READING, data, max, timeout);
@@ -414,7 +414,7 @@ int netSockRead(UosFile* file, void* data, uint16_t max, uint16_t timeout)
 
 int netSockReadLine(UosFile* file, void* data, uint16_t max, uint16_t timeout)
 {
-  P_ASSERT("netSockReadLine", file->fs->i == &netFS_I);
+  P_ASSERT("netSockReadLine", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
   return sockReadInternal(sock, NET_SOCK_READING_LINE, data, max, timeout);
@@ -422,7 +422,7 @@ int netSockReadLine(UosFile* file, void* data, uint16_t max, uint16_t timeout)
 
 static int sockWrite(UosFile* file, const char* data, int len)
 {
-  P_ASSERT("sockWrite", file->fs->i == &netFS_I);
+  P_ASSERT("sockWrite", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
   posMutexLock(sock->mutex);
@@ -473,7 +473,7 @@ static int sockWrite(UosFile* file, const char* data, int len)
 
 void netSockFree(UosFile* file)
 {
-  P_ASSERT("sockWrite", file->fs->i == &netFS_I);
+  P_ASSERT("sockWrite", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
   posMutexDestroy(sock->mutex);
@@ -490,7 +490,7 @@ void netSockFree(UosFile* file)
 
 static int sockClose(UosFile* file)
 {
-  P_ASSERT("sockWrite", file->fs->i == &netFS_I);
+  P_ASSERT("sockWrite", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
   posMutexLock(sock->mutex);
@@ -619,7 +619,7 @@ void netTcpAppcall()
 
       file = uip_conn->appstate.file;
 
-      P_ASSERT("netTcpAppcall", file->fs->i == &netFS_I);
+      P_ASSERT("netTcpAppcall", file->fs->cf == &netFSConf);
       NetSock* sock = (NetSock*)file->fsPriv;
 
       if (sock->state == NET_SOCK_CONNECT) {
@@ -640,7 +640,7 @@ void netTcpAppcall()
   if (file == NULL)
      return;
 
-  P_ASSERT("netTcpAppcall", file->fs->i == &netFS_I);
+  P_ASSERT("netTcpAppcall", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
   posMutexLock(sock->mutex);
@@ -788,7 +788,7 @@ void netUdpAppcall()
   UosFile *file;
   file = uip_udp_conn->appstate.file;
 
-  P_ASSERT("netUdpAppcall", file->fs->i == &netFS_I);
+  P_ASSERT("netUdpAppcall", file->fs->cf == &netFSConf);
   NetSock* sock = (NetSock*)file->fsPriv;
 
   if (sock->mutex == NULL) {
@@ -865,7 +865,7 @@ void netInit()
 // uosFS setup
 
   netFS.base.mountPoint = "/socket";
-  netFS.base.i = &netFS_I;
+  netFS.base.cf = &netFSConf;
  
   uosMount(&netFS.base);
   
