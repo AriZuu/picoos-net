@@ -17,8 +17,10 @@ Ivan A. Sergeev.
 
 For additional details see [this article][1] or [manual][2].
 
+For systems with more ram & rom there is also [picoos-lwip][5] library.
+
 [1]: http://stonepile.fi/uip-based-network-layer-for-picoos/
 [2]: http://arizuu.github.io/picoos-net
 [3]: http://www.contiki-os.org
 [4]: http://github.com/vsergeev/embedded-drivers/tree/master/lpc2148-enc28j60
-
+[5]: http://github.com/AriZuu/picoos-lwip
