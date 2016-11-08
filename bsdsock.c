@@ -58,25 +58,25 @@ int net_socket(int domain, int type, int protocol)
     return -1; // Bad socket type
   }
 
-  return uosFileSlot(sock);
+  return uosFile2Slot(sock);
 }
 
 int net_close(int s)
 {
-  uosFileClose(uosFile(s));
+  uosFileClose(uosSlot2File(s));
   return 0;
 }
 
 int net_connect(int s, const struct sockaddr *name, socklen_t namelen)
 {
-  return netSockConnect(uosFile(s), SOCKADDR2UIP(name), uip_ntohs(SOCKADDR2PORT(name)));
+  return netSockConnect(uosSlot2File(s), SOCKADDR2UIP(name), uip_ntohs(SOCKADDR2PORT(name)));
 }
 
 int net_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
 {
   UosFile* sock;
 
-  sock = netSockAccept(uosFile(s), SOCKADDR2UIP(addr));
+  sock = netSockAccept(uosSlot2File(s), SOCKADDR2UIP(addr));
   if (sock == NULL)
     return -1;
 
@@ -86,17 +86,17 @@ int net_accept(int s, struct sockaddr *addr, socklen_t *addrlen)
   *addrlen = sizeof(struct sockaddr_in);
 #endif
 
-  return uosFileSlot(sock);
+  return uosFile2Slot(sock);
 }
 
 int net_bind(int s, const struct sockaddr *name, socklen_t namelen)
 {
-  return netSockBind(uosFile(s), uip_ntohs(SOCKADDR2PORT(name)));
+  return netSockBind(uosSlot2File(s), uip_ntohs(SOCKADDR2PORT(name)));
 }
 
 int net_listen(int s, int backlog)
 {
-  netSockListen(uosFile(s));
+  netSockListen(uosSlot2File(s));
   return 0;
 }
 
@@ -107,7 +107,7 @@ int net_getsockopt (int s, int level, int optname, void *optval, socklen_t *optl
 
 int net_setsockopt (int s, int level, int optname, const void *optval, socklen_t optlen)
 {
-  UosFile* file = uosFile(s);
+  UosFile* file = uosSlot2File(s);
 
   if (optname == SO_RCVTIMEO) {
 
@@ -126,7 +126,7 @@ int net_setsockopt (int s, int level, int optname, const void *optval, socklen_t
 
 int net_recv(int s, void *dataptr, size_t size, int flags)
 {
-  UosFile* sock = uosFile(s);
+  UosFile* sock = uosSlot2File(s);
   int len;
 
   len = uosFileRead(sock, dataptr, size);
@@ -141,7 +141,7 @@ int net_recv(int s, void *dataptr, size_t size, int flags)
 
 int net_send(int s, const void *dataptr, size_t size, int flags)
 {
-  UosFile* sock = uosFile(s);
+  UosFile* sock = uosSlot2File(s);
 
   if (uosFileWrite(sock, dataptr, size) < (int)size)
     return -1;
